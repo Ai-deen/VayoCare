@@ -1,0 +1,17 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.env
+.venv
+env/
+venv/
+.git
+.gitignore
+tests/
+pictures/
+OfficialCommunityDeck.pptx.pdf
+thoughts.txt
+ideas.txt
+challenge.txt

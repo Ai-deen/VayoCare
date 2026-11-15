@@ -1,157 +1,138 @@
-# 🧓 ArogyaMitra (ఆరోగ్య మిత్ర)
+# 🧓 VayoCare (వయోకేర్)
 ### Smart Elderly Care & Routine-Anchored Medication Management Companion
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable-5A0FC8?logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
-[![Google Cloud Run](https://img.shields.io/badge/Google%20Cloud-Run-4285F4?logo=google-cloud&logoColor=white)](https://cloud.google.com/run)
+[![Google Gemini AI](https://img.shields.io/badge/Gemini-3.5_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 [![Tests Passing](https://img.shields.io/badge/Tests-20%2F20%20Passing-brightgreen?logo=pytest)](./tests)
 
 ---
 
-## 📌 Problem Statement Alignment (PromptWars x Catalyst)
+## 📌 Problem Statement (PromptWars x Catalyst)
 
 Traditional reminder apps fail Indian seniors because:
-1. **Seniors don't live by rigid clock alarms** — their lives revolve around natural daily routines (*Tiffin / Breakfast, Afternoon Lunch, Night Dinner*).
-2. **Language & Interaction Barriers** — rigid English forms and alarms cause anxiety or confusion; seniors code-switch between Telugu, Hindi, and English (*"మీరు tiffin తిన్నారా? Tablet వేసుకున్నారా?"*).
-3. **Conversational Straying & Privacy** — seniors frequently ramble when asked a question, while personal chatter should remain private and clinical symptoms should be immediately triaged.
-4. **Prescription vs Chemist Discrepancies** — medicines bought from local pharmacies often have mismatched salts, missing strips, or run out unnoticed.
-5. **ER & Clinic Blind Spots** — doctors and paramedics during an emergency cannot install an app just to see a patient's active medication salts.
+1. **Seniors don't follow rigid clock alarms** — their lives revolve around daily routines (*Tiffin / Breakfast, Afternoon Lunch, Night Dinner*).
+2. **Language & Interaction Barriers** — English-only forms cause anxiety; seniors code-switch between Telugu, Hindi, and English (*"మీరు tiffin తిన్నారా? Tablet వేసుకున్నారా?"*).
+3. **Conversational Straying & Privacy** — seniors ramble when asked a question; personal chatter should remain private, clinical symptoms should be triaged immediately.
+4. **Prescription vs Chemist Discrepancies** — medicines from local pharmacies often have mismatched salts, missing strips, or run out unnoticed.
+5. **ER & Clinic Blind Spots** — doctors during an emergency cannot install an app just to see a patient's active medication salts.
 
-**ArogyaMitra** solves all of this with an accessible, mobile-first Progressive Web App (PWA) powered by Python (FastAPI) and Google Gemini AI.
-
----
-
-## 🌟 The 3 Winning Unique Selling Propositions (USPs)
-
-### 🎙️ USP 1: Multilingual "Routine-Anchored" Voice Companion
-- **Routine Triggers**: Seniors speak their daily routine once (*"I wake up at 8, eat tiffin around 9"*). Medication reminders anchor around meals rather than rigid alarms.
-- **Native Code-Switched Voice Check-In**: Greets warmly in Telugu, Hindi, or English, showing large high-contrast tablet cards and pill colors.
-- **Smart Off-Topic Redirect & Clinical Severity Triage**:
-  - If the senior chats about shopping or friends (*"బయటకు వెళ్లి బట్టలు కొన్నాను..."*), the AI gently acknowledges it, filters out personal talk, and steers them back to their medication.
-  - Triage Engine differentiates **High Criticality** medications (Blood Pressure, Diabetes, Heart meds like *Telmikem 40, Glycomet 500, Ecosprin 75*) from **Low Criticality** supplements (*Shelcal 500, Neurobion*). Skipped vital medications immediately alert family caregivers via email and SMS.
-
-### 🔍 USP 2: "Prescription-vs-Strip" Dual Smart Audit & Refill Runway
-- **Dual Photo Scan**: Caregivers snap a photo of the doctor's prescription and photos of the chemist medicine strips bought.
-- **AI Chemical Salt Cross-Reconciliation**: Gemini cross-references active salts, dosages, and quantities to immediately detect missing items (e.g. missing blood thinners) or generic salt discrepancies.
-- **Visual Refill Runway**: Calculates remaining supply days and displays an urgent 1-click refill card with pack photos to show directly at the pharmacy.
-
-### 🚨 USP 3: App-Independent "ER & Doctor" QR Pass (With Rolling PIN)
-- **Zero-App Emergency View**: Scanning the senior's QR code opens a mobile browser emergency brief on any smartphone — **no app download required**.
-- **Rolling 6-Digit PIN**: Dynamic TOTP-style passcode rolling every 60 seconds gives seniors privacy control.
-- **Clinical Doctor Brief**:
-  1. Active Medications & Chemical Salt Compositions (prevents lethal adverse drug interactions).
-  2. Today's Dose Log (prevents accidental double-dosing).
-  3. 1-Tap Emergency Family & Doctor Speed Dials.
-  4. 1-Tap Downloadable/Printable Clinical Health Brief.
+**VayoCare** solves this with an accessible, mobile-first PWA powered by Python (FastAPI) and Google Gemini AI.
 
 ---
 
-## 🏗️ System Architecture
+## 🌟 3 Unique Selling Propositions (USPs)
+
+### 🎙️ USP 1: Multilingual Routine-Anchored Voice Companion
+- **Routine Triggers**: Seniors speak their daily routine once. Medication reminders anchor around meals, not rigid alarms.
+- **Native Code-Switched Voice Check-In**: Greets in Telugu, Hindi, or English with large high-contrast tablet cards and pill colors.
+- **Senior-Friendly Labels**: "BP మాత్ర" (BP Tablet), not "Telmisartan 40mg" — zero jargon.
+- **Smart Off-Topic Redirect & Clinical Triage**:
+  - Gently acknowledges off-topic talk (shopping, friends), filters it out, steers back to medication.
+  - Triage Engine differentiates **High Criticality** meds (BP, Diabetes, Heart) from **Low Criticality** supplements (Calcium, Vitamins). Skipped vital meds immediately alert family caregivers.
+
+### 🔍 USP 2: Prescription-vs-Strip Dual AI Audit & Refill Runway
+- **Dual Photo Scan**: Snap doctor's prescription + chemist medicine strips.
+- **AI Salt Cross-Reconciliation**: Gemini compares active salts, dosages, quantities — flags missing items (e.g., missing blood thinners).
+- **Visual Refill Runway**: Shows remaining supply days with urgency color-coding.
+
+### 🚨 USP 3: Zero-App Emergency QR Pass (Rolling PIN)
+- **Zero-App Emergency View**: Scanning the QR opens a browser-based medical brief on any smartphone — **no app download needed**.
+- **Rolling 6-Digit PIN**: TOTP-style code rolling every 60 seconds for privacy.
+- **Doctor Brief**: Active meds with chemical salts, today's dose log, emergency contacts.
+
+---
+
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                 Mobile-First Phone PWA                      │
+│                  Mobile-First PWA (Phone)                   │
 │   • Web Speech Recognition (Telugu / Hindi / English)       │
-│   • Native Web Audio Text-to-Speech (TTS)                   │
+│   • Text-to-Speech (TTS) native audio                      │
 │   • Offline-First Service Worker + manifest.json            │
-│   • Accessible UI (High contrast, 48px+ touch targets)      │
+│   • Senior-accessible UI (high contrast, 48px+ targets)    │
 └──────────────────────────────▲──────────────────────────────┘
                                │ JSON REST API
 ┌──────────────────────────────▼──────────────────────────────┐
 │                    Python FastAPI Backend                   │
-│   ├── /api/auth       -> Passcode-Protected Family Access   │
-│   ├── /api/routine    -> Voice Daily Routine Parsing        │
-│   ├── /api/companion  -> Off-Topic Redirect & Triage        │
-│   ├── /api/medications-> Adherence & Dose Logging           │
-│   ├── /api/audit      -> Dual Scan Salt Reconciliation      │
-│   ├── /api/emergency  -> Rolling PIN & Zero-App View        │
-│   └── /api/alerts     -> Proactive Caretaker Escalations    │
+│   ├── /api/auth       → Phone login & passcode access      │
+│   ├── /api/routine    → Voice daily routine parsing         │
+│   ├── /api/companion  → AI chat, off-topic redirect, triage│
+│   ├── /api/medications→ Adherence tracking & dose logging   │
+│   ├── /api/audit      → Prescription vs strip reconciliation│
+│   ├── /api/emergency  → Rolling PIN & zero-app doctor view  │
+│   └── /api/alerts     → Caretaker email/SMS escalations     │
 ├─────────────────────────────────────────────────────────────┤
-│ Google Gemini 2.5 Flash │ In-Memory / SQLite │ Dockerized   │
+│  Google Gemini 3.5 Flash │ In-Memory DB │ Docker / CloudRun │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📊 6-Slide Pitch Framework (From Hackathon Guidelines)
+## 🚀 Quickstart
 
-1. **Slide 1 - Problem**: 75% of Indian elderly miss doses due to rigid alarm times, language friction, and prescription-vs-chemist mismatches.
-2. **Slide 2 - Evidence**: 1 out of 3 hospital readmissions for chronic seniors stem from preventable medication non-adherence and drug clashing.
-3. **Slide 3 - Cost of Problem**: ₹1,20,000+ per emergency hospitalization for avoidable cardiac/diabetic crises.
-4. **Slide 4 - Solution**: ArogyaMitra — the multilingual, routine-anchored PWA companion that bridges seniors, caregivers, and doctors.
-5. **Slide 5 - Before vs After**:
-   - *Before*: Rigid alarms ignored, 13 hours to discover a missed BP pill, zero drug visibility during emergencies.
-   - *After*: Routine-anchored voice check-in, real-time caregiver alerts in <3 minutes, zero-app rolling PIN emergency pass.
-6. **Slide 6 - The 3 USPs**:
-   - Routine-Anchored Voice Companion (Telugu/Hindi/English)
-   - Dual-Scan Salt Reconciliation & Refill Runway
-   - Zero-App Doctor QR Pass with Rolling PIN.
-
----
-
-## 🚀 Quickstart Guide (Local Development)
-
-### 1. Prerequisites
+### Prerequisites
 - Python 3.11+
-- Git
 
-### 2. Installation
+### Install & Run
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/arogyamitra.git
-cd arogyamitra
-
-# Install dependencies
+git clone https://github.com/Ai-deen/vayocare.git
+cd vayocare
 pip install -r requirements.txt
-```
-
-### 3. Run the PWA Server
-```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Open `http://localhost:8000` on your mobile phone or browser.
+Open `http://localhost:8000` on your phone or browser.
 
 ---
 
-## 🧪 Automated Testing (100% Pass)
+## 🧪 Test Suite (20/20 Passing)
 
-Run the full automated test suite:
 ```bash
 pytest -v
 ```
-All 20 test suites pass across:
-- Voice routine natural language parsing
-- Multilingual voice check-in and off-topic redirect
-- Criticality-based clinical severity triage
-- Prescription-vs-strip AI discrepancy auditing
-- Dynamic rolling PIN generation and verification
-- End-to-end API endpoints and passcode security
+
+Covers:
+- Voice routine parsing (English/Telugu)
+- Multilingual companion chat & off-topic redirect
+- Clinical severity triage escalation
+- Prescription-vs-strip AI audit
+- Rolling PIN generation & verification
+- All API endpoints & passcode security
 
 ---
 
-## ☁️ Google Cloud Run Deployment
+## ☁️ Deployment (Google Cloud Run)
 
-To deploy on Google Cloud Run:
 ```bash
-# Build & Deploy directly to Cloud Run
-gcloud run deploy arogyamitra \
+gcloud run deploy vayocare \
     --source . \
     --platform managed \
     --region us-central1 \
     --allow-unauthenticated \
-    --set-env-vars GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+    --set-env-vars GEMINI_API_KEY="YOUR_KEY"
 ```
 
 ---
 
-## 🔒 Security & Privacy Practices
-- **Numeric Passcode Access**: Shared family/caregiver access protected by 4-digit PIN.
-- **Granular Consent Rolling PIN**: Doctors only receive access to active salts through a 60-second rolling TOTP code.
-- **Privacy Guardrail**: Senior's personal conversations (family news, shopping) are discarded from clinical logging.
+## 🔒 Security & Privacy
+- **Phone-based auth** with numeric passcode
+- **Rolling PIN** (60s TOTP) for emergency QR access
+- **Privacy guardrail**: Personal conversations filtered from clinical logs
 
 ---
 
-## 👥 Hackathon Team & Acknowledgements
+## 📊 Pitch Framework (6 Slides)
+1. **Problem**: 75% of Indian elderly miss doses due to rigid alarms & language barriers
+2. **Evidence**: 1/3 hospital readmissions from preventable medication non-adherence
+3. **Cost**: ₹1,20,000+ per avoidable emergency hospitalization
+4. **Solution**: VayoCare — routine-anchored, multilingual PWA companion
+5. **Before → After**: Rigid alarms ignored → meal-anchored voice check-in; 13hr discovery gap → real-time alerts
+6. **3 USPs**: Voice Companion + Dual Audit + Zero-App QR Pass
+
+---
+
+## 👥 Team
 Built for **PromptWars x Catalyst** by Google for Developers & MnM.
