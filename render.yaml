@@ -10,6 +10,8 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: GEMINI_API_KEY
-        value: AQ.Ab8RN6ImPkTvFeS1qwMlZqQzWplSCKY3UxXxxjxbfUGvWXSt2A
+        sync: false
       - key: GEMINI_MODEL
         value: gemini-3.5-flash-lite
+      - key: ROLLING_PIN_SALT
+        generateValue: true

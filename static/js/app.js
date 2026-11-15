@@ -70,6 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   initSpeechRecognition();
 
+  // Restore saved accessibility preferences
+  if (localStorage.getItem('vayocare_large_text') === 'true') {
+    document.body.classList.add('large-text');
+  }
+  if (localStorage.getItem('vayocare_high_contrast') === 'true') {
+    document.body.classList.add('high-contrast');
+  }
+
   if (!currentUserPhone) {
     document.getElementById('loginOverlay').style.display = 'block';
   } else {
@@ -83,6 +91,17 @@ function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(err => console.warn(err));
   }
+}
+
+// Accessibility Toggles
+function toggleLargeText() {
+  const isLarge = document.body.classList.toggle('large-text');
+  localStorage.setItem('vayocare_large_text', isLarge);
+}
+
+function toggleHighContrast() {
+  const isHC = document.body.classList.toggle('high-contrast');
+  localStorage.setItem('vayocare_high_contrast', isHC);
 }
 
 // 2. Authentication & Multi-User Handlers
@@ -116,6 +135,13 @@ async function handleAuthSubmit() {
         language: currentLanguage
       })
     });
+    
+    if (res.status === 429) {
+      const errData = await res.json();
+      alert(errData.detail || "Account temporarily locked due to failed attempts.");
+      return;
+    }
+
     const data = await res.json();
 
     currentUserPhone = phone;
@@ -160,7 +186,7 @@ function logoutUser() {
 }
 
 function setupDashboardForRole(role) {
-  const isPatient = role === 'patient';
+  const isPatient = role === 'patient' || role === 'elder';
   document.getElementById('seniorSection').style.display = isPatient ? 'block' : 'none';
   document.getElementById('caregiverSection').style.display = isPatient ? 'none' : 'block';
   document.getElementById('seniorNav').style.display = isPatient ? 'flex' : 'none';
@@ -184,7 +210,9 @@ function setupDashboardForRole(role) {
   loadRoutine();
   fetchEmergencyQr();
   if (!isPatient) {
-    loadAlerts();
+    loadAppointments();
+    loadAdherenceInsights();
+    loadActivityLogs();
   }
 }
 
@@ -252,7 +280,7 @@ function applyLanguage(lang) {
 // 5. Time-Anchored Greeting & Voice
 async function fetchGreeting() {
   try {
-    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+    const targetPhone = (currentUserRole === 'patient' || currentUserRole === 'elder') ? currentUserPhone : currentLinkedPhone;
     const res = await fetch(`/api/companion/greeting?language=${currentLanguage}&anchor=${currentAnchor}&phone=${targetPhone}`);
     const data = await res.json();
     
@@ -330,7 +358,7 @@ function startRoutineVoiceInput() {
 
 async function sendCompanionMessage(text) {
   try {
-    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+    const targetPhone = (currentUserRole === 'patient' || currentUserRole === 'elder') ? currentUserPhone : currentLinkedPhone;
     const res = await fetch('/api/companion/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -350,21 +378,21 @@ async function sendCompanionMessage(text) {
 }
 
 function submitQuickDose(status) {
-  const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+  const targetPhone = (currentUserRole === 'patient' || currentUserRole === 'elder') ? currentUserPhone : currentLinkedPhone;
   fetch(`/api/medications?phone=${targetPhone}`)
     .then(r => r.json())
     .then(meds => {
-      const activeMed = meds.find(m => m.timing_anchor === currentAnchor) || meds[0];
+      const activeMed = meds.find(m => m.timing_anchor === currentAnchor && m.approval_status === "approved") || meds.find(m => m.approval_status === "approved");
       if (activeMed) {
         logDoseDirect(activeMed.id, status);
       }
     });
 }
 
-// 6. Medication List
+// 6. Medication List & Elder Consent Handlers
 async function loadMedications() {
   try {
-    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+    const targetPhone = (currentUserRole === 'patient' || currentUserRole === 'elder') ? currentUserPhone : currentLinkedPhone;
     const res = await fetch(`/api/medications?phone=${targetPhone}`);
     const meds = await res.json();
     const container = document.getElementById('seniorMedList');
@@ -372,23 +400,49 @@ async function loadMedications() {
 
     const dict = I18N[currentLanguage] || I18N.en;
 
-    if (meds.length === 0) {
+    // Check for pending approvals on elder side
+    const pending = meds.filter(m => m.approval_status === "pending_approval");
+    const consentBanner = document.getElementById('elderConsentBanner');
+    const pendingList = document.getElementById('pendingMedsList');
+    if (consentBanner && pendingList) {
+      if (pending.length > 0) {
+        consentBanner.style.display = 'block';
+        pendingList.innerHTML = pending.map(p => `
+          <div style="background: white; border: 1px solid #FCD34D; border-radius: 10px; padding: 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>${p.senior_label}</strong> (${p.brand_name})
+              <div style="font-size: 11px; color: #78350F;">Proposed for: ${p.timing_anchor.toUpperCase()}</div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button onclick="approveMed('${p.id}')" class="btn-pill" style="background:#10B981; color:white;">Accept</button>
+              <button onclick="rejectMed('${p.id}')" class="btn-pill" style="background:#EF4444; color:white;">Decline</button>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        consentBanner.style.display = 'none';
+      }
+    }
+
+    const approvedMeds = meds.filter(m => m.approval_status === "approved");
+
+    if (approvedMeds.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 24px 16px; background: white; border: 1px dashed #CBD5E1; border-radius: 16px; color: #64748B;">
-          No active medicines added yet. Use Caregiver Hub to add your daily medicines.
+          No active medicines configured. Tap + New Medicine in Caregiver Hub.
         </div>
       `;
       return;
     }
 
-    container.innerHTML = meds.map(m => {
+    container.innerHTML = approvedMeds.map(m => {
       const friendlyName = currentLanguage === 'te' ? m.senior_label_te : (currentLanguage === 'hi' ? m.senior_label_hi : m.senior_label);
       const isUrgent = m.remaining_pills <= 3;
       const anchorTitle = m.timing_anchor.toUpperCase();
 
       return `
         <div class="med-card" style="border-left: 6px solid ${m.pill_color};">
-          <div class="med-icon-pill" style="background: ${m.pill_color}22; color: ${m.pill_color};">
+          <div class="med-icon-pill" style="background: ${m.pill_color}22; color: ${m.pill_color};" aria-hidden="true">
             💊
           </div>
           <div class="med-details">
@@ -402,10 +456,10 @@ async function loadMedications() {
             </div>
           </div>
           <div class="med-actions">
-            <button class="btn-action btn-taken" onclick="logDoseDirect('${m.id}', 'taken')">
+            <button class="btn-action btn-taken" onclick="logDoseDirect('${m.id}', 'taken')" aria-label="Confirm taken ${friendlyName}">
               ${dict.btnTakenSmall}
             </button>
-            <button class="btn-action btn-skip" onclick="logDoseDirect('${m.id}', 'skipped')">
+            <button class="btn-action btn-skip" onclick="logDoseDirect('${m.id}', 'skipped')" aria-label="Snooze or skip ${friendlyName}">
               ${dict.btnLaterSmall}
             </button>
           </div>
@@ -417,9 +471,21 @@ async function loadMedications() {
   }
 }
 
+async function approveMed(medId) {
+  const targetPhone = currentUserPhone || '9849012345';
+  await fetch(`/api/medications/${medId}/approve?phone=${targetPhone}`, { method: 'POST' });
+  loadMedications();
+}
+
+async function rejectMed(medId) {
+  const targetPhone = currentUserPhone || '9849012345';
+  await fetch(`/api/medications/${medId}/reject?phone=${targetPhone}`, { method: 'POST' });
+  loadMedications();
+}
+
 async function logDoseDirect(medId, status) {
   try {
-    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+    const targetPhone = (currentUserRole === 'patient' || currentUserRole === 'elder') ? currentUserPhone : currentLinkedPhone;
     await fetch('/api/medications/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -444,7 +510,7 @@ async function submitNewMedication() {
     alert("Please enter medicine name.");
     return;
   }
-  const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+  const targetPhone = currentLinkedPhone || '9849012345';
 
   try {
     await fetch('/api/medications', {
@@ -454,13 +520,13 @@ async function submitNewMedication() {
         name: name,
         timing_anchor: anchor,
         dosage: "1 pill",
-        phone: targetPhone
+        phone: targetPhone,
+        added_by: "caretaker"
       })
     });
-    alert(`Added ${name} to senior's schedule!`);
+    alert(`Proposed ${name} to senior! Pending their confirmation on their phone.`);
     document.getElementById('newMedNameInput').value = '';
     loadMedications();
-    fetchGreeting();
   } catch (err) {
     console.error(err);
   }
@@ -469,7 +535,6 @@ async function submitNewMedication() {
 // 7. Routine
 async function loadRoutine() {
   try {
-    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
     const res = await fetch(`/api/routine`);
     const r = await res.json();
     const list = document.getElementById('routineAnchorsList');
@@ -514,7 +579,112 @@ async function parseVoiceRoutine() {
   }
 }
 
-// 8. Caregiver Actions
+// 8. Caregiver Actions, Appointments, and Insights
+function toggleAppointmentForm() {
+  const f = document.getElementById('newApptForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function submitNewAppointment() {
+  const doc = document.getElementById('apptDocName').value.trim();
+  const spec = document.getElementById('apptSpecialty').value.trim() || "General Medicine";
+  const dt = document.getElementById('apptDate').value;
+  const tm = document.getElementById('apptTime').value;
+
+  if (!doc || !dt) {
+    alert("Please enter doctor name and date.");
+    return;
+  }
+
+  await fetch('/api/appointments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      doctor_name: doc,
+      specialty: spec,
+      hospital: "Care Clinic",
+      date: dt,
+      time: tm,
+      patient_phone: currentLinkedPhone
+    })
+  });
+
+  alert("Appointment scheduled! Proactive calendar email reminder dispatched.");
+  toggleAppointmentForm();
+  loadAppointments();
+}
+
+async function loadAppointments() {
+  try {
+    const res = await fetch(`/api/appointments?phone=${currentLinkedPhone}`);
+    const appts = await res.json();
+    const feed = document.getElementById('appointmentsListFeed');
+    if (!feed) return;
+
+    if (appts.length === 0) {
+      feed.innerHTML = '<div style="font-size:12px; color:#64748B;">No upcoming consultations scheduled.</div>';
+      return;
+    }
+
+    feed.innerHTML = appts.map(a => `
+      <div style="background:white; border:1px solid #E2E8F0; border-radius:10px; padding:10px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong style="font-size:13px;">${a.doctor_name}</strong> (${a.specialty})
+          <div style="font-size:11px; color:#64748B;">📅 ${a.date} at ${a.time} • ${a.hospital}</div>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <a href="/api/appointments/${a.id}/ics" class="btn-pill" style="font-size:11px; text-decoration:none;">📅 .ics</a>
+          <button onclick="cancelAppt('${a.id}')" class="btn-pill" style="font-size:11px; color:#DC2626;">✕</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function cancelAppt(apptId) {
+  await fetch(`/api/appointments/${apptId}?phone=${currentLinkedPhone}`, { method: 'DELETE' });
+  loadAppointments();
+}
+
+async function loadAdherenceInsights() {
+  try {
+    const res = await fetch(`/api/medications/insights?phone=${currentLinkedPhone}`);
+    const data = await res.json();
+    const box = document.getElementById('insightsContent');
+    if (box) {
+      box.innerHTML = `
+        7-Day Adherence: <strong>${data.adherence_7_day_pct}%</strong> | 30-Day Adherence: <strong>${data.adherence_30_day_pct}%</strong><br>
+        💡 <em>${data.pattern_insight}</em>
+      `;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function loadActivityLogs() {
+  try {
+    const res = await fetch(`/api/alerts/activity-log?phone=${currentLinkedPhone}`);
+    const logs = await res.json();
+    const feed = document.getElementById('activityLogFeed');
+    if (!feed) return;
+
+    feed.innerHTML = logs.slice(0, 10).map(l => `
+      <div style="background:white; border:1px solid #E2E8F0; border-radius:8px; padding:8px; margin-bottom:4px; font-size:12px;">
+        <div style="display:flex; justify-content:space-between; font-weight:700;">
+          <span>[${l.actor_role.toUpperCase()}] ${l.action}</span>
+          <span style="font-size:10px; color:#64748B;">${l.timestamp}</span>
+        </div>
+        <div style="color:#334155; margin-top:2px;">${l.details}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 async function submitCaregiverVoiceNote() {
   const input = document.getElementById('caregiverVoiceMsgInput');
   const msg = input.value.trim();
@@ -535,6 +705,7 @@ async function submitCaregiverVoiceNote() {
     });
     alert("Personal voice reminder saved! It will play for the senior during their dose check-in.");
     input.value = '';
+    loadActivityLogs();
   } catch (err) {
     console.error(err);
   }
@@ -695,27 +866,6 @@ async function fetchEmergencyQr() {
     if (qrImg) qrImg.src = data.qr_code_data;
     const docLink = document.getElementById('doctorDirectLink');
     if (docLink) docLink.href = data.emergency_url;
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-async function loadAlerts() {
-  try {
-    const res = await fetch('/api/alerts');
-    const alerts = await res.json();
-    const feed = document.getElementById('alertsLogFeed');
-    if (!feed) return;
-
-    feed.innerHTML = alerts.map(a => `
-      <div class="alert-item ${a.severity}">
-        <div style="display:flex; justify-content:space-between; font-weight:800;">
-          <span>${a.title}</span>
-          <span style="font-size:11px; opacity:0.8;">${a.timestamp}</span>
-        </div>
-        <div style="margin-top:2px;">${a.message}</div>
-      </div>
-    `).join('');
   } catch (err) {
     console.error(err);
   }

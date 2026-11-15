@@ -1,11 +1,14 @@
 import os
 import json
+import uuid
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from app.models import (
     Patient, Caregiver, DoctorContact, RoutineSchedule,
-    Medication, DoseLog, AlertNotification, CaregiverVoiceNote
+    Medication, DoseLog, AlertNotification, CaregiverVoiceNote,
+    Appointment, ActivityLog
 )
+from app.services.security_service import security_service
 
 DATA_FILE = "vayocare_db.json"
 
@@ -28,7 +31,7 @@ class MultiUserDB:
             age=72,
             gender="Male",
             phone=demo_phone,
-            passcode="4321",
+            passcode=security_service.hash_passcode("4321"),
             language_preference="en",
             chronic_conditions=["High Blood Pressure (Hypertension)", "Sugar (Diabetes)", "Heart Condition"],
             allergies=["Penicillin"],
@@ -47,6 +50,7 @@ class MultiUserDB:
                     relationship="Son",
                     phone="9885099999",
                     email="suresh.rao@example.com",
+                    role="caregiver",
                     notify_missed_dose=True,
                     notify_low_stock=True
                 )
@@ -64,6 +68,28 @@ class MultiUserDB:
                     message_text="Dad, please remember to take your morning BP and Sugar tablets after breakfast.",
                     created_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
                     assigned_anchor="breakfast"
+                )
+            ],
+            appointments=[
+                Appointment(
+                    id="appt_001",
+                    doctor_name="Dr. K. S. Murthy",
+                    specialty="Cardiologist",
+                    hospital="Care Hospitals",
+                    phone="+91 40 2345 6789",
+                    date="2026-11-20",
+                    time="10:30",
+                    notes="Quarterly cardiac routine evaluation",
+                    status="scheduled"
+                )
+            ],
+            activity_logs=[
+                ActivityLog(
+                    id="act_01",
+                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    actor_role="system",
+                    action="PROFILE_INITIALIZED",
+                    details="Ramesh Rao health circle securely initialized."
                 )
             ]
         )
@@ -83,7 +109,9 @@ class MultiUserDB:
                 remaining_pills=2,
                 daily_doses=1,
                 pill_color="#EF4444",
-                purpose="Blood Pressure"
+                purpose="Blood Pressure",
+                approval_status="approved",
+                added_by="elder"
             ),
             "m_metformin": Medication(
                 id="m_metformin",
@@ -99,7 +127,9 @@ class MultiUserDB:
                 remaining_pills=18,
                 daily_doses=2,
                 pill_color="#3B82F6",
-                purpose="Sugar Control"
+                purpose="Sugar Control",
+                approval_status="approved",
+                added_by="elder"
             ),
             "m_ecosprin": Medication(
                 id="m_ecosprin",
@@ -115,7 +145,9 @@ class MultiUserDB:
                 remaining_pills=14,
                 daily_doses=1,
                 pill_color="#F59E0B",
-                purpose="Cardiovascular"
+                purpose="Cardiovascular",
+                approval_status="approved",
+                added_by="elder"
             ),
             "m_shelcal": Medication(
                 id="m_shelcal",
@@ -131,7 +163,9 @@ class MultiUserDB:
                 remaining_pills=3,
                 daily_doses=1,
                 pill_color="#10B981",
-                purpose="Bone Strength"
+                purpose="Bone Strength",
+                approval_status="approved",
+                added_by="elder"
             )
         }
 
@@ -202,11 +236,9 @@ class MultiUserDB:
         p_key = self._normalize_phone(phone)
         if p_key in self.patients:
             return self.patients[p_key]
-        # Check by id
         for pat in self.patients.values():
             if pat.id == phone or pat.phone == phone:
                 return pat
-        # Fallback to default
         return self.patients.get(self.active_phone, list(self.patients.values())[0])
 
     def get_or_create_patient(self, phone: str, name: str = "", role: str = "patient") -> Patient:
@@ -218,14 +250,13 @@ class MultiUserDB:
                 pat.name = name
             return pat
 
-        # Brand new patient
         new_pat = Patient(
             id=f"p_{clean}",
             name=name or "Senior Patient",
             age=70,
             gender="Not Specified",
             phone=clean,
-            passcode="1234",
+            passcode=security_service.hash_passcode("1234"),
             language_preference="en",
             chronic_conditions=[],
             allergies=[],
@@ -244,7 +275,17 @@ class MultiUserDB:
                 hospital="Local Clinic",
                 phone=""
             ),
-            voice_notes=[]  # Clean! No fake notes!
+            voice_notes=[],
+            appointments=[],
+            activity_logs=[
+                ActivityLog(
+                    id=f"act_{int(datetime.now().timestamp())}",
+                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    actor_role=role,
+                    action="ACCOUNT_CREATED",
+                    details=f"Patient account {clean} created."
+                )
+            ]
         )
         self.patients[clean] = new_pat
         self.medications[clean] = {}
@@ -253,9 +294,27 @@ class MultiUserDB:
         self._save_to_disk()
         return new_pat
 
+    def add_activity_log(self, phone: str, actor_role: str, action: str, details: str):
+        pat = self.get_patient(phone)
+        log = ActivityLog(
+            id=f"act_{int(datetime.now().timestamp()*1000)}",
+            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            actor_role=actor_role,
+            action=action,
+            details=details
+        )
+        pat.activity_logs.insert(0, log)
+        self._save_to_disk()
+        return log
+
+    def get_activity_logs(self, phone: Optional[str] = None) -> List[ActivityLog]:
+        pat = self.get_patient(phone)
+        return pat.activity_logs
+
     def update_routine(self, schedule: RoutineSchedule, phone: Optional[str] = None) -> RoutineSchedule:
         patient = self.get_patient(phone)
         patient.routine = schedule
+        self.add_activity_log(patient.phone, "elder", "ROUTINE_UPDATED", f"Breakfast: {schedule.breakfast}, Lunch: {schedule.lunch}, Dinner: {schedule.dinner}")
         self._save_to_disk()
         return patient.routine
 
@@ -269,29 +328,52 @@ class MultiUserDB:
             assigned_anchor=anchor
         )
         patient.voice_notes.insert(0, note)
+        self.add_activity_log(patient.phone, "caretaker", "VOICE_NOTE_SENT", f"{caregiver_name} added a voice note for {anchor}.")
         self._save_to_disk()
         return note
 
     def get_medications(self, phone: Optional[str] = None) -> List[Medication]:
         p_key = self._normalize_phone(phone)
-        # If specific patient has medications, return them
-        if p_key in self.medications:
+        if p_key in self.medications and len(self.medications[p_key]) > 0:
             return list(self.medications[p_key].values())
-        # If demo fallback
-        return list(self.medications.get(self.active_phone, {}).values())
+        return list(self.medications.get("9849012345", {}).values())
 
     def add_medication(self, med: Medication, phone: Optional[str] = None) -> Medication:
         p_key = self._normalize_phone(phone)
         if p_key not in self.medications:
             self.medications[p_key] = {}
         self.medications[p_key][med.id] = med
+        self.add_activity_log(p_key, med.added_by, "MEDICATION_ADDED", f"{med.senior_label} ({med.brand_name}) added [Status: {med.approval_status}].")
         self._save_to_disk()
         return med
 
+    def approve_medication(self, med_id: str, phone: Optional[str] = None) -> Optional[Medication]:
+        p_key = self._normalize_phone(phone)
+        meds = self.medications.get(p_key, {})
+        if med_id in meds:
+            meds[med_id].approval_status = "approved"
+            self.add_activity_log(p_key, "elder", "MEDICATION_APPROVED", f"Elder approved medication: {meds[med_id].senior_label}.")
+            self._save_to_disk()
+            return meds[med_id]
+        return None
+
+    def reject_medication(self, med_id: str, phone: Optional[str] = None) -> bool:
+        p_key = self._normalize_phone(phone)
+        meds = self.medications.get(p_key, {})
+        if med_id in meds:
+            lbl = meds[med_id].senior_label
+            del meds[med_id]
+            self.add_activity_log(p_key, "elder", "MEDICATION_REJECTED", f"Elder declined medication proposal: {lbl}.")
+            self._save_to_disk()
+            return True
+        return False
+
     def get_medication(self, med_id: str, phone: Optional[str] = None) -> Optional[Medication]:
         p_key = self._normalize_phone(phone)
-        meds = self.medications.get(p_key, self.medications.get(self.active_phone, {}))
-        return meds.get(med_id)
+        meds = self.medications.get(p_key, {})
+        if med_id in meds:
+            return meds[med_id]
+        return self.medications.get("9849012345", {}).get(med_id)
 
     def log_dose(self, med_id: str, status: str, notes: str = "", triage: str = "none", phone: Optional[str] = None) -> Optional[DoseLog]:
         p_key = self._normalize_phone(phone)
@@ -321,12 +403,35 @@ class MultiUserDB:
         if p_key not in self.dose_logs:
             self.dose_logs[p_key] = []
         self.dose_logs[p_key].insert(0, new_log)
+        self.add_activity_log(p_key, "elder", f"DOSE_{status.upper()}", f"{senior_lbl} logged as {status}.")
         self._save_to_disk()
         return new_log
 
     def get_today_logs(self, phone: Optional[str] = None) -> List[DoseLog]:
         p_key = self._normalize_phone(phone)
         return self.dose_logs.get(p_key, self.dose_logs.get(self.active_phone, []))
+
+    # Appointments CRUD
+    def add_appointment(self, appt: Appointment, phone: Optional[str] = None) -> Appointment:
+        pat = self.get_patient(phone)
+        pat.appointments.append(appt)
+        self.add_activity_log(pat.phone, "caretaker", "APPOINTMENT_SCHEDULED", f"Appointment with {appt.doctor_name} on {appt.date} at {appt.time}.")
+        self._save_to_disk()
+        return appt
+
+    def get_appointments(self, phone: Optional[str] = None) -> List[Appointment]:
+        pat = self.get_patient(phone)
+        return getattr(pat, 'appointments', [])
+
+    def delete_appointment(self, appt_id: str, phone: Optional[str] = None) -> bool:
+        pat = self.get_patient(phone)
+        initial_len = len(pat.appointments)
+        pat.appointments = [a for a in pat.appointments if a.id != appt_id]
+        if len(pat.appointments) < initial_len:
+            self.add_activity_log(pat.phone, "caretaker", "APPOINTMENT_CANCELLED", f"Appointment {appt_id} cancelled.")
+            self._save_to_disk()
+            return True
+        return False
 
     def add_alert(self, severity: str, title: str, message: str, recipient: str = "caregiver@example.com", phone: Optional[str] = None) -> AlertNotification:
         p_key = self._normalize_phone(phone)

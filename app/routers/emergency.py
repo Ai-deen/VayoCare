@@ -6,8 +6,8 @@ from app.services.qr_service import qr_service
 
 router = APIRouter(prefix="/api/emergency", tags=["Zero-App Emergency QR Pass"])
 
-def build_pin_data(request: Optional[Request] = None):
-    patient = db.get_patient()
+def build_pin_data(request: Optional[Request] = None, patient_id: Optional[str] = None):
+    patient = db.get_patient(patient_id or "9849012345")
     pin = qr_service.generate_rolling_pin(patient.id)
     rem = qr_service.get_remaining_seconds()
 
@@ -39,7 +39,11 @@ def get_doctor_emergency_view(patient_id: str, pin: Optional[str] = None):
         raise HTTPException(status_code=404, detail="Patient record not found")
 
     if pin is not None and isinstance(pin, str):
-        is_valid = qr_service.verify_rolling_pin(patient.id, pin) or pin in ["999999", "000000", patient.passcode, "4321"]
+        is_valid = (
+            qr_service.verify_rolling_pin(patient.id, pin) or
+            qr_service.verify_rolling_pin(patient_id, pin) or
+            pin in ["999999", "000000", "4321"]
+        )
         if not is_valid:
             raise HTTPException(status_code=403, detail="Expired or Invalid Access PIN. Please ask patient for the current screen code.")
     meds = db.get_medications(patient.phone)

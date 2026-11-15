@@ -52,28 +52,31 @@
 </head>
 <body>
 
+  <!-- Accessible Skip Link for Keyboard Navigation -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
   <!-- ==================== LOGIN / ONBOARDING SCREEN ==================== -->
-  <div id="loginOverlay" class="login-overlay">
+  <div id="loginOverlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="login-card">
       <div style="width: 52px; height: 52px; border-radius: 16px; background: #2563EB; color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px;">V</div>
-      <h2 style="font-size: 22px; font-weight: 900;">Welcome to VayoCare</h2>
+      <h2 id="loginTitle" style="font-size: 22px; font-weight: 900;">Welcome to VayoCare</h2>
       <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">Routine-Anchored Elder Medication Companion</p>
 
-      <div style="text-align: left; margin-bottom: 6px; font-weight: 700; font-size: 13px;">Your Phone Number (ఫోన్ నంబర్):</div>
-      <input type="tel" id="authPhone" class="input-box" placeholder="e.g. 9849012345">
+      <label for="authPhone" style="display: block; text-align: left; margin-bottom: 4px; font-weight: 700; font-size: 13px;">Your Phone Number (ఫోన్ నంబర్):</label>
+      <input type="tel" id="authPhone" class="input-box" placeholder="e.g. 9849012345" aria-required="true">
 
-      <div style="text-align: left; margin-bottom: 6px; font-weight: 700; font-size: 13px;">Your Name (మీ పేరు):</div>
+      <label for="authName" style="display: block; text-align: left; margin-bottom: 4px; font-weight: 700; font-size: 13px;">Your Name (మీ పేరు):</label>
       <input type="text" id="authName" class="input-box" placeholder="e.g. Ramesh Rao">
 
       <div style="text-align: left; margin-bottom: 6px; font-weight: 700; font-size: 13px;">Select Your Role:</div>
-      <div class="role-grid">
-        <div id="roleSelectPatient" class="role-card selected" onclick="selectRole('patient')">
-          <span style="font-size: 30px;">🧓</span>
+      <div class="role-grid" role="radiogroup" aria-label="Role Selection">
+        <div id="roleSelectPatient" class="role-card selected" onclick="selectRole('patient')" role="radio" aria-checked="true" tabindex="0">
+          <span style="font-size: 30px;" aria-hidden="true">🧓</span>
           <div style="font-weight: 800; font-size: 14px; margin-top: 4px;">Senior (Patient)</div>
           <div style="font-size: 11px; color: #64748B;">వృద్ధులు</div>
         </div>
-        <div id="roleSelectCaregiver" class="role-card" onclick="selectRole('caregiver')">
-          <span style="font-size: 30px;">👨‍👩‍👧</span>
+        <div id="roleSelectCaregiver" class="role-card" onclick="selectRole('caregiver')" role="radio" aria-checked="false" tabindex="0">
+          <span style="font-size: 30px;" aria-hidden="true">👨‍👩‍👧</span>
           <div style="font-weight: 800; font-size: 14px; margin-top: 4px;">Caregiver</div>
           <div style="font-size: 11px; color: #64748B;">కుటుంబ సభ్యుడు</div>
         </div>
@@ -81,7 +84,7 @@
 
       <!-- Caregiver Parent Linking -->
       <div id="caregiverLinkBox" style="display: none; background: #F1F5F9; padding: 12px; border-radius: 12px; margin-bottom: 14px; text-align: left;">
-        <label style="font-size: 12px; font-weight: 800; color: #334155;">Senior Parent's Phone Number (తల్లి/తండ్రి ఫోన్ నంబర్):</label>
+        <label for="authParentPhone" style="font-size: 12px; font-weight: 800; color: #334155;">Senior Parent's Phone Number (తల్లి/తండ్రి ఫోన్ నంబర్):</label>
         <input type="tel" id="authParentPhone" class="input-box" placeholder="e.g. 9849012345" style="margin-top: 4px; margin-bottom: 0;">
       </div>
 
@@ -98,11 +101,11 @@
   </div>
 
   <!-- ==================== CAMERA MODAL ==================== -->
-  <div id="cameraModal" class="camera-modal">
+  <div id="cameraModal" class="camera-modal" role="dialog" aria-modal="true" aria-label="Camera Viewfinder">
     <div class="camera-box">
       <div style="padding: 12px 16px; background: #1E293B; color: white; display: flex; justify-content: space-between; align-items: center;">
         <span style="font-weight: 800; font-size: 15px;">📸 Camera Viewfinder</span>
-        <button onclick="closeCameraModal()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+        <button onclick="closeCameraModal()" aria-label="Close Camera" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
       </div>
       <div style="position: relative; background: #000; min-height: 260px; max-height: 340px; display: flex; align-items: center; justify-content: center;">
         <video id="cameraVideo" autoplay playsinline style="width: 100%; max-height: 340px; object-fit: cover;"></video>
@@ -123,51 +126,61 @@
   <!-- ==================== MAIN HEADER ==================== -->
   <header class="app-header">
     <div class="brand-wrapper">
-      <div class="brand-logo">V</div>
+      <div class="brand-logo" aria-hidden="true">V</div>
       <div>
         <h1 class="brand-title">VayoCare</h1>
         <p class="brand-subtitle" id="userStatusTag">Senior Mode</p>
       </div>
     </div>
     <div style="display: flex; align-items: center; gap: 6px;">
+      <!-- Accessibility Toggles -->
+      <button onclick="toggleLargeText()" aria-label="Toggle larger font size" class="btn-pill" style="font-size: 12px; font-weight: 800; padding: 5px 8px;">A+</button>
+      <button onclick="toggleHighContrast()" aria-label="Toggle high contrast accessibility mode" class="btn-pill" style="font-size: 12px; font-weight: 800; padding: 5px 8px;">🌓</button>
       <button onclick="logoutUser()" class="btn-pill" style="font-size: 11px; padding: 5px 8px; background: #F1F5F9; border: 1px solid #CBD5E1;">Switch User</button>
-      <div class="lang-selector-group">
-        <button class="lang-btn active" data-lang="en" onclick="setAppLanguage('en')">EN</button>
-        <button class="lang-btn" data-lang="hi" onclick="setAppLanguage('hi')">हिंदी</button>
-        <button class="lang-btn" data-lang="te" onclick="setAppLanguage('te')">తెలుగు</button>
+      <div class="lang-selector-group" role="group" aria-label="Language Selector">
+        <button class="lang-btn active" data-lang="en" onclick="setAppLanguage('en')" aria-label="Switch to English">EN</button>
+        <button class="lang-btn" data-lang="hi" onclick="setAppLanguage('hi')" aria-label="Switch to Hindi">हिंदी</button>
+        <button class="lang-btn" data-lang="te" onclick="setAppLanguage('te')" aria-label="Switch to Telugu">తెలుగు</button>
       </div>
     </div>
   </header>
 
-  <main class="container">
+  <main class="container" id="main-content">
 
     <!-- ==================== 1. SENIOR VIEW ONLY ==================== -->
     <div id="seniorSection">
       
+      <!-- Pending Elder Approvals Banner -->
+      <div id="elderConsentBanner" style="display: none; background: #FFFBEB; border: 2px solid #F59E0B; border-radius: 16px; padding: 14px; margin-bottom: 16px;">
+        <h4 style="color: #B45309; font-weight: 800; font-size: 15px; margin-bottom: 4px;">⚠️ Pending Medication Approval</h4>
+        <p style="font-size: 13px; color: #92400E; margin-bottom: 8px;">Your caregiver proposed a new medication. Do you approve adding it to your schedule?</p>
+        <div id="pendingMedsList"></div>
+      </div>
+
       <!-- Tab 1: Home (Clean time-anchored companion) -->
-      <section id="senior-home" class="tab-content active">
+      <section id="senior-home" class="tab-content active" aria-label="Senior Home Dashboard">
         <div class="elder-card">
           <div class="hero-badge" id="heroPillLabel">
             💊 Afternoon Medicine
           </div>
           
-          <div class="companion-bubble" id="companionSpeechBubble" style="font-size: 18px; line-height: 1.5; text-align: center; border-left: none; background: #F0FDF4; color: #166534; border: 2px solid #BBF7D0; padding: 16px;">
+          <div class="companion-bubble" id="companionSpeechBubble" role="status" aria-live="polite" style="font-size: 18px; line-height: 1.5; text-align: center; border-left: none; background: #F0FDF4; color: #166534; border: 2px solid #BBF7D0; padding: 16px;">
             "Good afternoon Ramesh Rao! Have you finished your lunch? Did you take your medicine?"
           </div>
 
           <div class="mic-wrapper" style="margin: 16px auto 10px;">
-            <button id="micBtn" class="btn-mic" onclick="toggleVoiceInput()" aria-label="Tap to speak">🎙️</button>
+            <button id="micBtn" class="btn-mic" onclick="toggleVoiceInput()" aria-label="Tap to speak into microphone">🎙️</button>
             <p class="mic-hint" id="i18n-micHint" style="font-size: 16px; margin-top: 8px;">Tap to Speak to Companion</p>
-            <span class="voice-status-pill" id="voiceStatusPill">Ready • Microphones Active</span>
+            <span class="voice-status-pill" id="voiceStatusPill" role="status" aria-live="polite">Ready • Microphones Active</span>
           </div>
 
           <div class="action-grid">
-            <button class="action-btn btn-yes" onclick="submitQuickDose('taken')">
-              <span style="font-size: 24px;">✅</span>
+            <button class="action-btn btn-yes" onclick="submitQuickDose('taken')" aria-label="Confirm dose taken">
+              <span style="font-size: 24px;" aria-hidden="true">✅</span>
               <span id="i18n-btnTaken">Yes, Taken<br><small style="font-size:11px; font-weight:600;">(Confirmed)</small></span>
             </button>
-            <button class="action-btn btn-no" onclick="submitQuickDose('skipped')">
-              <span style="font-size: 24px;">⏰</span>
+            <button class="action-btn btn-no" onclick="submitQuickDose('skipped')" aria-label="Delay or skip dose">
+              <span style="font-size: 24px;" aria-hidden="true">⏰</span>
               <span id="i18n-btnLater">Take Later<br><small style="font-size:11px; font-weight:600;">(Remind Soon)</small></span>
             </button>
           </div>
@@ -177,11 +190,11 @@
           <h3 style="font-size: 18px; font-weight: 800;" id="i18n-todayMedsHeading">Today's Essential Medicines</h3>
           <span class="user-tag" id="doseCountBadge">Active Doses</span>
         </div>
-        <div id="seniorMedList"></div>
+        <div id="seniorMedList" role="region" aria-label="Daily Medication List"></div>
       </section>
 
       <!-- Tab 2: Senior Routine (Speak or View) -->
-      <section id="senior-routine" class="tab-content">
+      <section id="senior-routine" class="tab-content" aria-label="Daily Routine">
         <div class="card">
           <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">🗣️ Daily Meal Routine</h2>
           <p style="font-size: 13px; color: #64748B; margin-bottom: 14px;">
@@ -190,10 +203,11 @@
 
           <div style="background: #F1F5F9; padding: 14px; border-radius: 14px; margin-bottom: 14px;">
             <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-              <button class="btn-primary" onclick="startRoutineVoiceInput()" style="flex: 1; padding: 10px; font-size: 14px;">
+              <button class="btn-primary" onclick="startRoutineVoiceInput()" aria-label="Speak your daily meal schedule" style="flex: 1; padding: 10px; font-size: 14px;">
                 🎙️ Speak Daily Routine
               </button>
             </div>
+            <label for="voiceRoutineInput" style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Transcript / Edit Routine:</label>
             <textarea id="voiceRoutineInput" rows="2" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px; font-size: 14px;">I wake up at 7:30, eat breakfast at 9:00, lunch at 1:30, and dinner at 8:30.</textarea>
             <button class="btn-secondary" onclick="parseVoiceRoutine()" style="margin-top: 8px; width: 100%; padding: 10px; font-size: 14px;">
               ⚡ Save Routine
@@ -204,16 +218,16 @@
       </section>
 
       <!-- Tab 3: Emergency QR Pass -->
-      <section id="senior-emergency" class="tab-content">
+      <section id="senior-emergency" class="tab-content" aria-label="Emergency Doctor Pass">
         <div class="card" style="text-align: center;">
-          <span style="font-size: 32px;">🚨</span>
+          <span style="font-size: 32px;" aria-hidden="true">🚨</span>
           <h2 style="font-size: 20px; font-weight: 800; margin-top: 4px;">Zero-App Emergency QR Pass</h2>
           <p style="font-size: 13px; color: #64748B; margin: 6px 0 14px;">
             Show this QR to any doctor or paramedic. Scanning it opens your medical emergency brief directly in their browser — no app install needed!
           </p>
 
           <div class="qr-image-wrapper">
-            <img id="emergencyQrImg" src="" alt="Emergency QR Code" style="max-width: 220px; margin: 0 auto; display: block;">
+            <img id="emergencyQrImg" src="" alt="High contrast scannable QR code for doctor medical access" style="max-width: 220px; margin: 0 auto; display: block;">
           </div>
 
           <a id="doctorDirectLink" href="/emergency/p_ramesh_72" target="_blank" class="btn-primary" style="text-decoration: none; margin-top: 14px; display: block; padding: 14px;">
@@ -227,15 +241,15 @@
     <!-- ==================== 2. CAREGIVER VIEW ONLY ==================== -->
     <div id="caregiverSection" style="display: none;">
 
-      <!-- Tab 1: Caregiver Hub (Overview & Adherence) -->
-      <section id="cg-hub" class="tab-content active">
+      <!-- Tab 1: Caregiver Hub (Overview, Adherence, Appointments, Insights) -->
+      <section id="cg-hub" class="tab-content active" aria-label="Caregiver Hub">
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <div>
               <h2 style="font-size: 20px; font-weight: 800;">Caregiver Command Hub</h2>
               <p style="font-size: 13px; color: #64748B;" id="cgManagedSeniorText">Linked Senior: Ramesh Rao (9849012345)</p>
             </div>
-            <span style="font-size: 26px;">👨‍👩‍👧</span>
+            <span style="font-size: 26px;" aria-hidden="true">👨‍👩‍👧</span>
           </div>
 
           <!-- Weekly Adherence Grid -->
@@ -255,6 +269,15 @@
             Weekly Adherence Rate: 92% • 0 Missed Critical Doses
           </div>
 
+          <!-- Adherence Insights Card -->
+          <div id="adherenceInsightsBox" style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+            <h4 style="font-size: 14px; font-weight: 800; color: #0369A1; margin-bottom: 4px;">📊 AI Adherence & Pattern Insights</h4>
+            <div id="insightsContent" style="font-size: 13px; color: #0C4A6E; line-height: 1.5;">
+              7-Day Adherence: <strong>92%</strong> | 30-Day Adherence: <strong>89%</strong><br>
+              💡 <em>Consistent adherence across all daily meal anchors.</em>
+            </div>
+          </div>
+
           <!-- Refill Runway Card -->
           <div style="background: #FEF2F2; border-left: 5px solid #EF4444; padding: 12px; border-radius: 12px; margin-bottom: 16px;">
             <div style="font-weight: 800; color: #991B1B; font-size: 14px;">⚠️ Refill Alert (Runway: 2 Days)</div>
@@ -263,17 +286,48 @@
             </div>
           </div>
 
-          <!-- Add Medicine to Senior -->
+          <!-- Appointments Section -->
           <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-            <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 8px;">➕ Add Medicine for Senior</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4 style="font-size: 14px; font-weight: 800;">📅 Doctor Appointments</h4>
+              <button onclick="toggleAppointmentForm()" class="btn-pill" style="font-size: 11px;">+ New Appt</button>
+            </div>
+            
+            <div id="newApptForm" style="display: none; background: white; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px; margin-bottom: 10px;">
+              <label for="apptDocName" style="font-size: 11px; font-weight: 700; display: block;">Doctor Name:</label>
+              <input type="text" id="apptDocName" placeholder="e.g. Dr. K. S. Murthy" class="input-box" style="margin-bottom: 6px; font-size: 13px; padding: 8px;">
+              <label for="apptSpecialty" style="font-size: 11px; font-weight: 700; display: block;">Specialty & Hospital:</label>
+              <input type="text" id="apptSpecialty" placeholder="e.g. Cardiologist, Care Hospitals" class="input-box" style="margin-bottom: 6px; font-size: 13px; padding: 8px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <div>
+                  <label for="apptDate" style="font-size: 11px; font-weight: 700; display: block;">Date:</label>
+                  <input type="date" id="apptDate" class="input-box" style="margin-bottom: 6px; font-size: 13px; padding: 8px;">
+                </div>
+                <div>
+                  <label for="apptTime" style="font-size: 11px; font-weight: 700; display: block;">Time:</label>
+                  <input type="time" id="apptTime" class="input-box" style="margin-bottom: 6px; font-size: 13px; padding: 8px;" value="10:00">
+                </div>
+              </div>
+              <button class="btn-primary" onclick="submitNewAppointment()" style="width: 100%; padding: 8px; font-size: 13px;">Save Appointment & Schedule Email</button>
+            </div>
+
+            <div id="appointmentsListFeed"></div>
+          </div>
+
+          <!-- Add Medicine to Senior (Consent-Aware) -->
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+            <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 4px;">➕ Add Medicine Proposal</h4>
+            <p style="font-size: 12px; color: #64748B; margin-bottom: 8px;">Proposed medicines require senior confirmation on their device.</p>
+            <label for="newMedNameInput" style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 2px;">Medicine Name:</label>
             <input type="text" id="newMedNameInput" placeholder="e.g. Thyroid Tablet (Eltroxin 50)" class="input-box" style="margin-bottom: 8px; font-size: 14px;">
+            <label for="newMedAnchorInput" style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 2px;">Meal Timing Anchor:</label>
             <select id="newMedAnchorInput" class="input-box" style="margin-bottom: 8px; font-size: 14px;">
               <option value="breakfast">🌅 Breakfast (Morning)</option>
               <option value="lunch">☀️ Lunch (Afternoon)</option>
               <option value="dinner">🌙 Dinner (Night)</option>
             </select>
             <button class="btn-primary" onclick="submitNewMedication()" style="width: 100%; padding: 10px; font-size: 14px;">
-              Save Medicine
+              Propose Medicine to Senior
             </button>
           </div>
 
@@ -283,19 +337,20 @@
             <p style="font-size: 12px; color: #64748B; margin-bottom: 8px;">
               This loving reminder plays on their phone when it's time for their dose.
             </p>
+            <label for="caregiverVoiceMsgInput" style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 2px;">Message:</label>
             <input type="text" id="caregiverVoiceMsgInput" placeholder="e.g. Dad, remember to take your afternoon tablet after lunch." class="input-box" style="margin-bottom: 8px; font-size: 14px;">
             <button class="btn-primary" onclick="submitCaregiverVoiceNote()" style="width: 100%; padding: 10px; font-size: 14px;">
               💌 Save Personal Voice Reminder
             </button>
           </div>
 
-          <h3 style="font-size: 15px; font-weight: 800; margin: 14px 0 8px;">Alerts Log Feed</h3>
-          <div id="alertsLogFeed"></div>
+          <h3 style="font-size: 15px; font-weight: 800; margin: 14px 0 8px;">Activity Audit Log</h3>
+          <div id="activityLogFeed"></div>
         </div>
       </section>
 
       <!-- Tab 2: Prescription vs Strip Audit (Camera + AI) -->
-      <section id="cg-audit" class="tab-content">
+      <section id="cg-audit" class="tab-content" aria-label="Prescription AI Audit">
         <div class="card">
           <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">🔍 Prescription vs Strip AI Audit</h2>
           <p style="font-size: 13px; color: #64748B; margin-bottom: 14px;">
@@ -313,15 +368,15 @@
 
           <div style="background: #F1F5F9; padding: 12px; border-radius: 12px; margin-bottom: 12px;">
             <div id="rxPhotoPreviewBox" style="display: none; margin-bottom: 8px;">
-              <img id="auditRxPhotoImg" style="width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px;" alt="Rx Photo">
+              <img id="auditRxPhotoImg" style="width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px;" alt="Captured doctor paper prescription photograph">
             </div>
-            <label style="font-size: 12px; font-weight: 700; color: #334155;">Prescription Details:</label>
+            <label for="auditRxInput" style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 2px;">Prescription Details:</label>
             <textarea id="auditRxInput" rows="2" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px; font-size: 13px; box-sizing: border-box;">Rx: Tab Telmikem 40 (BP) 1-0-0, Tab Glycomet 500 (Sugar) 1-0-1, Tab Ecosprin 75 0-1-0. Review in 30 days.</textarea>
 
             <div id="stripPhotoPreviewBox" style="display: none; margin: 8px 0;">
-              <img id="auditStripPhotoImg" style="width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px;" alt="Strip Photo">
+              <img id="auditStripPhotoImg" style="width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px;" alt="Captured chemist medicine blister strips photograph">
             </div>
-            <label style="font-size: 12px; font-weight: 700; color: #334155; margin-top: 6px; display: block;">Chemist Strips Bought:</label>
+            <label for="auditStripInput" style="font-size: 12px; font-weight: 700; color: #334155; margin-top: 6px; display: block; margin-bottom: 2px;">Chemist Strips Bought:</label>
             <textarea id="auditStripInput" rows="2" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px; font-size: 13px; box-sizing: border-box;">Chemist Strips: Telmikem 40 (10 tabs), Glycomet 500 (10 tabs). (Ecosprin not given).</textarea>
           </div>
 
@@ -345,32 +400,32 @@
   </main>
 
   <!-- ==================== ROLE-SPECIFIC BOTTOM NAVIGATION ==================== -->
-  <nav class="bottom-nav" id="seniorNav">
-    <button class="nav-item active" onclick="switchSeniorTab('home')">
-      <span class="nav-icon">🏠</span>
+  <nav class="bottom-nav" id="seniorNav" role="navigation" aria-label="Senior Primary Navigation">
+    <button class="nav-item active" onclick="switchSeniorTab('home')" aria-label="Navigate to Home">
+      <span class="nav-icon" aria-hidden="true">🏠</span>
       <span id="navHomeText">Home</span>
     </button>
-    <button class="nav-item" onclick="switchSeniorTab('routine')">
-      <span class="nav-icon">🗓️</span>
+    <button class="nav-item" onclick="switchSeniorTab('routine')" aria-label="Navigate to Daily Routine">
+      <span class="nav-icon" aria-hidden="true">🗓️</span>
       <span id="navRoutineText">Routine</span>
     </button>
-    <button class="nav-item" onclick="switchSeniorTab('emergency')">
-      <span class="nav-icon">🚨</span>
+    <button class="nav-item" onclick="switchSeniorTab('emergency')" aria-label="Navigate to Emergency QR Code">
+      <span class="nav-icon" aria-hidden="true">🚨</span>
       <span id="navEmergencyText">Emergency QR</span>
     </button>
   </nav>
 
-  <nav class="bottom-nav" id="caregiverNav" style="display: none;">
-    <button class="nav-item active" onclick="switchCaregiverTab('hub')">
-      <span class="nav-icon">📊</span>
+  <nav class="bottom-nav" id="caregiverNav" style="display: none;" role="navigation" aria-label="Caregiver Primary Navigation">
+    <button class="nav-item active" onclick="switchCaregiverTab('hub')" aria-label="Navigate to Caregiver Hub">
+      <span class="nav-icon" aria-hidden="true">📊</span>
       <span>Caregiver Hub</span>
     </button>
-    <button class="nav-item" onclick="switchCaregiverTab('audit')">
-      <span class="nav-icon">🔍</span>
+    <button class="nav-item" onclick="switchCaregiverTab('audit')" aria-label="Navigate to AI Prescription Audit">
+      <span class="nav-icon" aria-hidden="true">🔍</span>
       <span>AI Audit</span>
     </button>
-    <button class="nav-item" onclick="openDoctorViewDirect()">
-      <span class="nav-icon">🚨</span>
+    <button class="nav-item" onclick="openDoctorViewDirect()" aria-label="Open Patient Emergency Medical Brief">
+      <span class="nav-icon" aria-hidden="true">🚨</span>
       <span>Patient QR</span>
     </button>
   </nav>
