@@ -1,117 +1,67 @@
 // VayoCare PWA Core Application Engine
 
 let currentLanguage = localStorage.getItem('vayocare_lang') || 'en';
-let currentUserRole = 'patient';
-let currentAnchor = 'breakfast';
+let currentUserRole = localStorage.getItem('vayocare_role') || 'patient';
+let currentUserPhone = localStorage.getItem('vayocare_phone') || '';
+let currentUserName = localStorage.getItem('vayocare_name') || '';
+let currentLinkedPhone = localStorage.getItem('vayocare_linked_phone') || '9849012345';
+let currentAnchor = detectCurrentTimeAnchor();
 let isListening = false;
 let speechRecognition = null;
-let wizardRole = 'patient';
 let cameraStream = null;
 let currentCameraTarget = 'onboarding';
 
-// Complete Multilingual Dictionary (Zero Token Cost on Language Switch)
+function detectCurrentTimeAnchor() {
+  const now = new Date();
+  const hrs = now.getHours() + (now.getMinutes() / 60);
+  if (hrs < 11.5) return 'breakfast';
+  if (hrs < 16.0) return 'lunch';
+  if (hrs < 21.5) return 'dinner';
+  return 'bedtime';
+}
+
 const I18N = {
-  te: {
-    brandSubtitle: "వృద్ధుల ఆరోగ్య మిత్ర • Elder Companion",
-    rolePatient: "Senior Mode (వృద్ధుల మోడ్)",
-    roleCaregiver: "Caregiver Hub (కేర్‌టేకర్‌)",
-    heroPillLabel: "💊 BP మాత్ర (BP Tablet)",
-    micHint: "నొక్కి మాట్లాడండి (Tap to Speak)",
-    btnTaken: "హా, వేసుకున్నాను<br><small style='font-size:12px; font-weight:600;'>(Yes, Taken)</small>",
-    btnLater: "తర్వాత వేసుకుంటా<br><small style='font-size:12px; font-weight:600;'>(Take Later)</small>",
-    todayMedsHeading: "ఈరోజు మాత్రలు (Today's Doses)",
-    routineTitle: "🗣️ మీ దినచర్య (Daily Routine)",
-    routineDesc: "మీరు ఏ సమయంలో తింటారో చెబితే, AI దానికి తగినట్లుగా మాత్రల సమయాన్ని నిర్ణయిస్తుంది.",
-    btnSaveRoutine: "⚡ దినచర్యను సేవ్‌ చేయండి (Save Routine)",
-    emergencyTitle: "డాక్టర్ / ఎమర్జెన్సీ QR పాస్",
-    emergencyDesc: "ఏ ఫోన్ కెమెరాతోనైనా స్కాన్ చేస్తే వెంటనే మీ వివరాలు, ప్రస్తుత మాత్రల వివరాలు కనిపిస్తాయి. యాప్ డౌన్‌లోడ్ చేయనవసరం లేదు!",
-    qrAccessCodeLabel: "యాక్సెస్ పిన్ (Access PIN):",
-    btnOpenDoctorView: "డాక్టర్ వ్యూ తెరవండి (Open Doctor View)",
-    cgHubTitle: "కేర్‌టేకర్‌ డాష్‌బోర్డ్ (Caregiver Hub)",
-    cgLinkedPatientText: "లింక్ అయిన రోగి: రమేష్ రావు (72 సం.)",
-    weeklyTrackerHeading: "📅 గత 7 రోజుల ట్రాకర్ (7-Day Adherence)",
-    voiceNoteTitle: "🎙️ రోగికి మీ వాయిస్ మెసేజ్ పంపండి (Personal Voice Reminder)",
-    voiceNoteDesc: "మీరు మాట్లాడే మాటలు ఉదయం పూట రోగికి వినిపిస్తాయి. రోబోట్ వాయిస్ కాకుండా మీ మాటలే వారికి ధైర్యాన్నిస్తాయి.",
-    btnSendVoiceNote: "💌 వాయిస్ మెసేజ్ పంపండి (Save Note)",
-    btnTestAlert: "📧 ఈమెయిల్ అలర్ట్ పరీక్షించండి (Test Caregiver Email)",
-    notifFeedTitle: "అలర్ట్ మరియు నోటిఫికేషన్లు (Alerts Log)",
-    auditTitle: "🔍 ప్రిస్క్రిప్షన్ vs స్ట్రిప్ AI ఆడిట్",
-    auditDesc: "డాక్టర్ రాసిన కాగితం మరియు కెమిస్ట్ ఇచ్చిన మందుల స్ట్రిప్స్ ఫోటో తీయండి. ఏవైనా మందులు మిస్సయ్యాయా అని AI వెంటనే చెబుతుంది.",
-    btnRunAudit: "⚡ AI ఆడిట్ ప్రారంభించండి (Run AI Audit)",
-    refillRunwayHeading: "📦 రీఫిల్ రన్‌వే (Refill Runway)",
-    navHome: "హోమ్",
-    navRoutine: "దినచర్య",
-    navAudit: "ఆడిట్",
-    navCaretaker: "కేర్‌టేకర్‌",
-    navEmergency: "QR పాస్"
-  },
-  hi: {
-    brandSubtitle: "बुजुर्ग स्वास्थ्य साथी • Elder Companion",
-    rolePatient: "Senior Mode (बुजुर्ग मोड)",
-    roleCaregiver: "Caregiver Hub (देखभालकर्ता)",
-    heroPillLabel: "💊 बीपी की गोली (BP Tablet)",
-    micHint: "बोलने के लिए दबाएं (Tap to Speak)",
-    btnTaken: "हाँ, ले ली है<br><small style='font-size:12px; font-weight:600;'>(Yes, Taken)</small>",
-    btnLater: "बाद में लूंगा<br><small style='font-size:12px; font-weight:600;'>(Take Later)</small>",
-    todayMedsHeading: "आज की दवाएं (Today's Doses)",
-    routineTitle: "🗣️ आपकी दिनचर्या (Daily Routine)",
-    routineDesc: "अपने भोजन का समय बताएं, AI दवाओं का समय अपने आप तय कर देगा।",
-    btnSaveRoutine: "⚡ दिनचर्या सुरक्षित करें (Save Routine)",
-    emergencyTitle: "डॉक्टर / आपातकालीन QR पास",
-    emergencyDesc: "किसी भी फोन से स्कैन करें और दवा की जानकारी देखें। ऐप डाउनलोड की जरूरत नहीं!",
-    qrAccessCodeLabel: "एक्सेस पिन (Access PIN):",
-    btnOpenDoctorView: "डॉक्टर व्यू खोलें (Open Doctor View)",
-    cgHubTitle: "देखभालकर्ता डैशबोर्ड (Caregiver Hub)",
-    cgLinkedPatientText: "मरीज: रमेश राव (72 वर्ष)",
-    weeklyTrackerHeading: "📅 पिछले 7 दिनों का रिकॉर्ड (7-Day Adherence)",
-    voiceNoteTitle: "🎙️ मरीज के लिए अपनी आवाज में संदेश छोड़ें",
-    voiceNoteDesc: "आपका रिकॉर्ड किया संदेश सुबह मरीज को सुनाया जाएगा, जिससे उन्हें अपनापन लगेगा।",
-    btnSendVoiceNote: "💌 संदेश भेजें (Save Note)",
-    btnTestAlert: "📧 ईमेल अलर्ट टेस्ट करें (Test Email Alert)",
-    notifFeedTitle: "अलर्ट और सूचनाएं (Alerts Log)",
-    auditTitle: "🔍 पर्चा बनाम दवा पट्टी AI ऑडिट",
-    auditDesc: "डॉक्टर का पर्चा और खरीदी गई दवा की तुलना करें। छूटी हुई दवा तुरंत पता चलेगी।",
-    btnRunAudit: "⚡ AI ऑडिट शुरू करें (Run AI Audit)",
-    refillRunwayHeading: "📦 दवा स्टॉक रनवे (Refill Runway)",
-    navHome: "होम",
-    navRoutine: "दिनचर्या",
-    navAudit: "ऑडिट",
-    navCaretaker: "देखभालकर्ता",
-    navEmergency: "QR पास"
-  },
   en: {
-    brandSubtitle: "Smart Elderly Care Companion",
-    rolePatient: "Senior Mode (Elderly)",
-    roleCaregiver: "Caregiver Hub",
-    heroPillLabel: "💊 Morning BP Tablet",
     micHint: "Tap to Speak to Companion",
-    btnTaken: "Yes, Taken<br><small style='font-size:12px; font-weight:600;'>(Confirmed)</small>",
-    btnLater: "Take Later<br><small style='font-size:12px; font-weight:600;'>(Remind Soon)</small>",
+    btnTaken: "Yes, Taken<br><small style='font-size:11px; font-weight:600;'>(Confirmed)</small>",
+    btnLater: "Take Later<br><small style='font-size:11px; font-weight:600;'>(Remind Soon)</small>",
     todayMedsHeading: "Today's Essential Medicines",
-    routineTitle: "🗣️ Routine-Anchored Schedule",
-    routineDesc: "Speak your daily meal schedule once, and doses anchor naturally around meals.",
-    btnSaveRoutine: "⚡ Save Daily Routine",
-    emergencyTitle: "Doctor / Emergency QR Pass",
-    emergencyDesc: "Scan with any smartphone camera to view medical salts and dose history. Zero app install required!",
-    qrAccessCodeLabel: "Access PIN:",
-    btnOpenDoctorView: "Open Browser Doctor View",
-    cgHubTitle: "Caregiver Command Hub",
-    cgLinkedPatientText: "Linked Senior: Ramesh Rao (Age 72)",
-    weeklyTrackerHeading: "📅 Past 7-Day Medication Adherence",
-    voiceNoteTitle: "🎙️ Send Loving Voice Reminder to Senior",
-    voiceNoteDesc: "Your personal voice message plays when it's time for their dose, providing comfort and reassurance.",
-    btnSendVoiceNote: "💌 Save Voice Note",
-    btnTestAlert: "📧 Dispatch Test Caregiver Email Alert",
-    notifFeedTitle: "Live Notification & Alert Feed",
-    auditTitle: "🔍 Prescription vs Chemist Strip AI Audit",
-    auditDesc: "Compares doctor's prescription with chemist strips to identify missing medicines and generic salt variations.",
-    btnRunAudit: "⚡ Run Gemini AI Reconciliation",
-    refillRunwayHeading: "📦 Visual Refill Runway (Days Left)",
+    btnTakenSmall: "✅ Taken",
+    btnLaterSmall: "Later",
+    leftText: "Left:",
+    pillsText: "pills",
+    lowStock: "⚠️ Low Stock:",
     navHome: "Home",
     navRoutine: "Routine",
-    navAudit: "AI Audit",
-    navCaretaker: "Caregiver",
-    navEmergency: "QR Pass"
+    navEmergency: "Emergency QR"
+  },
+  hi: {
+    micHint: "बोलने के लिए दबाएं (Tap to Speak)",
+    btnTaken: "हाँ, ले ली है<br><small style='font-size:11px; font-weight:600;'>(Yes, Taken)</small>",
+    btnLater: "बाद में लूंगा<br><small style='font-size:11px; font-weight:600;'>(Take Later)</small>",
+    todayMedsHeading: "आज की आवश्यक दवाएं",
+    btnTakenSmall: "✅ ली है",
+    btnLaterSmall: "बाद में",
+    leftText: "शेष:",
+    pillsText: "गोलियां",
+    lowStock: "⚠️ कम स्टॉक:",
+    navHome: "होम",
+    navRoutine: "दिनचर्या",
+    navEmergency: "आपातकालीन QR"
+  },
+  te: {
+    micHint: "నొక్కి మాట్లాడండి (Tap to Speak)",
+    btnTaken: "హా, వేసుకున్నాను<br><small style='font-size:11px; font-weight:600;'>(Yes, Taken)</small>",
+    btnLater: "తర్వాత వేసుకుంటా<br><small style='font-size:11px; font-weight:600;'>(Take Later)</small>",
+    todayMedsHeading: "ఈరోజు ముఖ్యమైన మాత్రలు",
+    btnTakenSmall: "✅ వేసుకున్నా",
+    btnLaterSmall: "తర్వాత",
+    leftText: "మిగిలినవి:",
+    pillsText: "మాత్రలు",
+    lowStock: "⚠️ తక్కువగా ఉన్నాయి:",
+    navHome: "హోమ్",
+    navRoutine: "దినచర్య",
+    navEmergency: "ఎమర్జెన్సీ QR"
   }
 };
 
@@ -120,19 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   initSpeechRecognition();
 
-  // If first time or not configured, show onboarding wizard
-  if (!localStorage.getItem('vayocare_onboarded')) {
-    openOnboardingWizard();
+  if (!currentUserPhone) {
+    document.getElementById('loginOverlay').style.display = 'block';
   } else {
-    currentUserRole = localStorage.getItem('vayocare_user_role') || 'patient';
-    switchUserRole(currentUserRole);
+    setupDashboardForRole(currentUserRole);
   }
 
-  loadPatientData();
-  loadMedications();
-  loadRoutine();
-  loadAlerts();
-  fetchEmergencyQr();
   applyLanguage(currentLanguage);
 });
 
@@ -142,195 +85,145 @@ function registerServiceWorker() {
   }
 }
 
-// 2. Onboarding & Setup Wizard
-function openOnboardingWizard() {
-  document.getElementById('onboardingWizard').style.display = 'block';
-  goToWizardStep(1);
+// 2. Authentication & Multi-User Handlers
+function selectRole(role) {
+  document.getElementById('roleSelectPatient').classList.toggle('selected', role === 'patient');
+  document.getElementById('roleSelectCaregiver').classList.toggle('selected', role === 'caregiver');
+  document.getElementById('caregiverLinkBox').style.display = (role === 'caregiver') ? 'block' : 'none';
 }
 
-function selectWizardRole(role) {
-  wizardRole = role;
-  document.getElementById('roleCardPatient').classList.toggle('selected', role === 'patient');
-  document.getElementById('roleCardCaregiver').classList.toggle('selected', role === 'caregiver');
-  document.getElementById('caregiverLinkingFields').style.display = (role === 'caregiver') ? 'block' : 'none';
-}
+async function handleAuthSubmit() {
+  const phone = document.getElementById('authPhone').value.trim();
+  const name = document.getElementById('authName').value.trim() || "Senior Patient";
+  const isCg = document.getElementById('roleSelectCaregiver').classList.contains('selected');
+  const role = isCg ? 'caregiver' : 'patient';
+  const parentPhone = isCg ? (document.getElementById('authParentPhone').value.trim() || "9849012345") : phone;
 
-function goToWizardStep(stepNum) {
-  document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
-
-  const stepEl = document.getElementById(`wizardStep${stepNum}`);
-  if (stepEl) stepEl.classList.add('active');
-
-  for (let i = 1; i <= stepNum; i++) {
-    const dot = document.getElementById(`dotStep${i}`);
-    if (dot) dot.classList.add('active');
+  if (!phone) {
+    alert("Please enter a valid phone number.");
+    return;
   }
-}
-
-function previewUploadedPrescription(input) {
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      applyCapturedPhoto(e.target.result);
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
-// Live Camera Handling
-async function openLiveCamera(target) {
-  currentCameraTarget = target;
-  const modal = document.getElementById('cameraModal');
-  if (modal) modal.style.display = 'flex';
-  const video = document.getElementById('cameraVideo');
 
   try {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false
-      });
-      if (video) {
-        video.srcObject = cameraStream;
-        video.play();
-      }
-    } else {
-      document.getElementById('fallbackFileInput').click();
-    }
-  } catch (err) {
-    console.warn('Live camera stream not available or blocked, using file fallback:', err);
-    const fb = document.getElementById('fallbackFileInput');
-    if (fb) fb.click();
-  }
-}
-
-function closeCameraModal() {
-  const modal = document.getElementById('cameraModal');
-  if (modal) modal.style.display = 'none';
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(track => track.stop());
-    cameraStream = null;
-  }
-}
-
-function captureCameraPhoto() {
-  const video = document.getElementById('cameraVideo');
-  const canvas = document.getElementById('cameraCanvas');
-  if (!video || !canvas) return;
-
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-
-  applyCapturedPhoto(dataUrl);
-  closeCameraModal();
-}
-
-function handleFileFallback(input) {
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      applyCapturedPhoto(e.target.result);
-      closeCameraModal();
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
-function applyCapturedPhoto(dataUrl) {
-  if (currentCameraTarget === 'onboarding') {
-    const img = document.getElementById('cameraPreviewThumb');
-    if (img) {
-      img.src = dataUrl;
-      img.style.display = 'block';
-    }
-  } else if (currentCameraTarget === 'audit_rx') {
-    const box = document.getElementById('rxPhotoPreviewBox');
-    const img = document.getElementById('auditRxPhotoImg');
-    if (box && img) {
-      img.src = dataUrl;
-      box.style.display = 'block';
-    }
-    const input = document.getElementById('auditRxInput');
-    if (input) {
-      input.value = "Rx (Photo Scanned): Tab Telmikem 40 (BP) 1-0-0, Tab Glycomet 500 (Sugar) 1-0-1, Tab Ecosprin 75 0-1-0. Review in 30 days.";
-    }
-  } else if (currentCameraTarget === 'audit_strip') {
-    const box = document.getElementById('stripPhotoPreviewBox');
-    const img = document.getElementById('auditStripPhotoImg');
-    if (box && img) {
-      img.src = dataUrl;
-      box.style.display = 'block';
-    }
-    const input = document.getElementById('auditStripInput');
-    if (input) {
-      input.value = "Chemist Strips (Photo Scanned): Telmikem 40 (10 tabs), Glycomet 500 (10 tabs). (Ecosprin not found in strips).";
-    }
-  }
-}
-
-function loadDemoProfileAndSkip() {
-  localStorage.setItem('vayocare_onboarded', 'true');
-  localStorage.setItem('vayocare_user_role', 'patient');
-  document.getElementById('onboardingWizard').style.display = 'none';
-  switchUserRole('patient');
-  loadPatientData();
-  loadMedications();
-}
-
-async function finishWizardAndOpenDashboard() {
-  const name = document.getElementById('setupUserName').value.trim() || "Ramesh Rao";
-  const phone = document.getElementById('setupUserPhone').value.trim() || "9849012345";
-  const bf = document.getElementById('setupBreakfastTime').value || "09:00";
-  const lunch = document.getElementById('setupLunchTime').value || "13:30";
-  const dinner = document.getElementById('setupDinnerTime').value || "20:30";
-
-  try {
-    // 1. Post phone auth
-    await fetch('/api/auth/phone-login', {
+    const res = await fetch('/api/auth/phone-login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        role: wizardRole,
+        role: role,
         name: name,
         phone: phone,
-        patient_phone: wizardRole === 'caregiver' ? (document.getElementById('setupPatientPhone').value || "9849012345") : phone,
+        patient_phone: parentPhone,
         language: currentLanguage
       })
     });
+    const data = await res.json();
 
-    // 2. Post routine schedule
-    await fetch('/api/routine', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        wake_up: "07:30",
-        breakfast: bf,
-        lunch: lunch,
-        dinner: dinner,
-        bedtime: "22:00",
-        notes: "Configured via VayoCare onboarding wizard"
-      })
-    });
+    currentUserPhone = phone;
+    currentUserName = name;
+    currentUserRole = role;
+    currentLinkedPhone = parentPhone;
 
-    localStorage.setItem('vayocare_onboarded', 'true');
-    localStorage.setItem('vayocare_user_role', wizardRole);
-    document.getElementById('onboardingWizard').style.display = 'none';
+    localStorage.setItem('vayocare_phone', phone);
+    localStorage.setItem('vayocare_name', name);
+    localStorage.setItem('vayocare_role', role);
+    localStorage.setItem('vayocare_linked_phone', parentPhone);
 
-    switchUserRole(wizardRole);
-    loadPatientData();
-    loadMedications();
-    loadRoutine();
+    document.getElementById('loginOverlay').style.display = 'none';
+    setupDashboardForRole(role);
   } catch (err) {
-    console.error('Error completing wizard:', err);
-    loadDemoProfileAndSkip();
+    console.error('Login error:', err);
+    loginDemoProfile();
   }
 }
 
-// 3. Language Switcher (Complete Instant UI Localization)
+function loginDemoProfile() {
+  currentUserPhone = "9849012345";
+  currentUserName = "Ramesh Rao";
+  currentUserRole = "patient";
+  currentLinkedPhone = "9849012345";
+
+  localStorage.setItem('vayocare_phone', "9849012345");
+  localStorage.setItem('vayocare_name', "Ramesh Rao");
+  localStorage.setItem('vayocare_role', "patient");
+  localStorage.setItem('vayocare_linked_phone', "9849012345");
+
+  document.getElementById('loginOverlay').style.display = 'none';
+  setupDashboardForRole('patient');
+}
+
+function logoutUser() {
+  localStorage.removeItem('vayocare_phone');
+  localStorage.removeItem('vayocare_name');
+  localStorage.removeItem('vayocare_role');
+  currentUserPhone = '';
+  document.getElementById('loginOverlay').style.display = 'block';
+}
+
+function setupDashboardForRole(role) {
+  const isPatient = role === 'patient';
+  document.getElementById('seniorSection').style.display = isPatient ? 'block' : 'none';
+  document.getElementById('caregiverSection').style.display = isPatient ? 'none' : 'block';
+  document.getElementById('seniorNav').style.display = isPatient ? 'flex' : 'none';
+  document.getElementById('caregiverNav').style.display = isPatient ? 'none' : 'flex';
+
+  const tag = document.getElementById('userStatusTag');
+  if (tag) {
+    tag.textContent = isPatient 
+      ? `Senior: ${currentUserName} (${currentUserPhone})`
+      : `Caregiver: ${currentUserName} (Managing ${currentLinkedPhone})`;
+  }
+
+  const cgText = document.getElementById('cgManagedSeniorText');
+  if (cgText) {
+    cgText.textContent = `Managing Senior: ${currentLinkedPhone}`;
+  }
+
+  currentAnchor = detectCurrentTimeAnchor();
+  fetchGreeting();
+  loadMedications();
+  loadRoutine();
+  fetchEmergencyQr();
+  if (!isPatient) {
+    loadAlerts();
+  }
+}
+
+// 3. Navigation
+function switchSeniorTab(tabName) {
+  document.querySelectorAll('#seniorSection .tab-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#seniorNav .nav-item').forEach(b => b.classList.remove('active'));
+
+  const tab = document.getElementById(`senior-${tabName}`);
+  if (tab) tab.classList.add('active');
+
+  const order = ['home', 'routine', 'emergency'];
+  const idx = order.indexOf(tabName);
+  const items = document.querySelectorAll('#seniorNav .nav-item');
+  if (items[idx]) items[idx].classList.add('active');
+
+  if (tabName === 'emergency') {
+    fetchEmergencyQr();
+  }
+}
+
+function switchCaregiverTab(tabName) {
+  document.querySelectorAll('#caregiverSection .tab-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#caregiverNav .nav-item').forEach(b => b.classList.remove('active'));
+
+  const tab = document.getElementById(`cg-${tabName}`);
+  if (tab) tab.classList.add('active');
+
+  const order = ['hub', 'audit'];
+  const idx = order.indexOf(tabName);
+  const items = document.querySelectorAll('#caregiverNav .nav-item');
+  if (items[idx]) items[idx].classList.add('active');
+}
+
+function openDoctorViewDirect() {
+  window.open(`/emergency/p_${currentLinkedPhone || 'ramesh_72'}`, '_blank');
+}
+
+// 4. Multilingual Switching
 function setAppLanguage(lang) {
   currentLanguage = lang;
   localStorage.setItem('vayocare_lang', lang);
@@ -348,78 +241,31 @@ function applyLanguage(lang) {
     const el = document.getElementById(`i18n-${key}`);
     if (el) el.innerHTML = val;
   }
-  const heroBadge = document.getElementById('heroPillLabel');
-  if (heroBadge && dict.heroPillLabel) {
-    heroBadge.innerHTML = dict.heroPillLabel;
-  }
+  const nh = document.getElementById('navHomeText');
+  if (nh) nh.textContent = dict.navHome;
+  const nr = document.getElementById('navRoutineText');
+  if (nr) nr.textContent = dict.navRoutine;
+  const ne = document.getElementById('navEmergencyText');
+  if (ne) ne.textContent = dict.navEmergency;
 }
 
-// 4. Role Switcher
-function switchUserRole(role) {
-  currentUserRole = role;
-  localStorage.setItem('vayocare_user_role', role);
-  document.getElementById('btnRolePatient').classList.toggle('active', role === 'patient');
-  document.getElementById('btnRoleCaregiver').classList.toggle('active', role === 'caregiver');
-
-  if (role === 'patient') {
-    document.getElementById('patientViewSection').style.display = 'block';
-    document.getElementById('caregiverViewSection').style.display = 'none';
-    switchNavTab('home');
-  } else {
-    document.getElementById('patientViewSection').style.display = 'none';
-    document.getElementById('caregiverViewSection').style.display = 'block';
-    switchNavTab('caretaker');
-  }
-}
-
-// 5. Navigation
-function switchNavTab(tabId) {
-  if (tabId === 'caretaker' || tabId === 'audit') {
-    if (currentUserRole !== 'caregiver') switchUserRole('caregiver');
-  } else {
-    if (currentUserRole !== 'patient') switchUserRole('patient');
-  }
-
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-  const target = document.getElementById(`tab-${tabId}`);
-  if (target) target.classList.add('active');
-
-  const navOrder = ['home', 'routine', 'audit', 'caretaker', 'emergency'];
-  const idx = navOrder.indexOf(tabId);
-  const items = document.querySelectorAll('.nav-item');
-  if (items[idx]) items[idx].classList.add('active');
-
-  if (tabId === 'emergency') {
-    fetchEmergencyQr();
-  }
-}
-
-// 6. Patient Profile & Greeting
-async function loadPatientData() {
-  try {
-    const res = await fetch('/api/auth/profile');
-    const data = await res.json();
-    fetchGreeting();
-  } catch (err) {
-    console.error(err);
-  }
-}
-
+// 5. Time-Anchored Greeting & Voice
 async function fetchGreeting() {
   try {
-    const res = await fetch(`/api/companion/greeting?language=${currentLanguage}&anchor=${currentAnchor}`);
+    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+    const res = await fetch(`/api/companion/greeting?language=${currentLanguage}&anchor=${currentAnchor}&phone=${targetPhone}`);
     const data = await res.json();
+    
     const bubble = document.getElementById('companionSpeechBubble');
-    bubble.textContent = `"${data.text}"`;
-    speakText(data.spoken, currentLanguage);
+    if (bubble) bubble.textContent = `"${data.text}"`;
+
+    const hero = document.getElementById('heroPillLabel');
+    if (hero) hero.textContent = `💊 ${data.active_medicine || 'Medicine Check-in'}`;
   } catch (err) {
     console.error(err);
   }
 }
 
-// 7. Voice Interaction
 function initSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) return;
@@ -430,20 +276,25 @@ function initSpeechRecognition() {
 
   speechRecognition.onstart = () => {
     isListening = true;
-    document.getElementById('micBtn').classList.add('listening');
-    document.getElementById('voiceStatusPill').textContent = 'Listening... (వినబడుతోంది)';
+    const btn = document.getElementById('micBtn');
+    if (btn) btn.classList.add('listening');
+    const pill = document.getElementById('voiceStatusPill');
+    if (pill) pill.textContent = 'Listening... (Speak now)';
   };
 
   speechRecognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
-    document.getElementById('voiceStatusPill').textContent = `Heard: "${transcript}"`;
+    const pill = document.getElementById('voiceStatusPill');
+    if (pill) pill.textContent = `Heard: "${transcript}"`;
     sendCompanionMessage(transcript);
   };
 
   speechRecognition.onend = () => {
     isListening = false;
-    document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('voiceStatusPill').textContent = 'Ready • Microphones Active';
+    const btn = document.getElementById('micBtn');
+    if (btn) btn.classList.remove('listening');
+    const pill = document.getElementById('voiceStatusPill');
+    if (pill) pill.textContent = 'Ready • Microphones Active';
   };
 }
 
@@ -461,25 +312,30 @@ function toggleVoiceInput() {
   }
 }
 
-function speakText(text, lang) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = lang === 'te' ? 'te-IN' : (lang === 'hi' ? 'hi-IN' : 'en-IN');
-  utt.rate = 0.9;
-  window.speechSynthesis.speak(utt);
+function startRoutineVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert('Voice input supported on Google Chrome / Android Chrome.');
+    return;
+  }
+  const recog = new SpeechRecognition();
+  recog.lang = currentLanguage === 'te' ? 'te-IN' : (currentLanguage === 'hi' ? 'hi-IN' : 'en-IN');
+  recog.onresult = (e) => {
+    const t = e.results[0][0].transcript;
+    document.getElementById('voiceRoutineInput').value = t;
+    parseVoiceRoutine();
+  };
+  recog.start();
 }
 
 async function sendCompanionMessage(text) {
-  const pill = document.getElementById('voiceStatusPill');
-  pill.textContent = 'VayoCare AI analyzing...';
-
   try {
+    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
     const res = await fetch('/api/companion/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        patient_id: 'p_ramesh_72',
+        patient_id: targetPhone || '9849012345',
         speech_text: text,
         language: currentLanguage,
         current_anchor: currentAnchor
@@ -487,35 +343,48 @@ async function sendCompanionMessage(text) {
     });
     const data = await res.json();
     document.getElementById('companionSpeechBubble').textContent = `"${data.reply_text}"`;
-    speakText(data.spoken_text, currentLanguage);
-
-    pill.textContent = data.redirected_offtopic
-      ? 'Gently redirected off-topic talk'
-      : `Action: ${data.action_taken.replace(/_/g, ' ')}`;
-
     loadMedications();
-    loadAlerts();
   } catch (err) {
     console.error(err);
-    pill.textContent = 'Processed.';
   }
 }
 
-function submitQuickVoice(text) {
-  sendCompanionMessage(text);
+function submitQuickDose(status) {
+  const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+  fetch(`/api/medications?phone=${targetPhone}`)
+    .then(r => r.json())
+    .then(meds => {
+      const activeMed = meds.find(m => m.timing_anchor === currentAnchor) || meds[0];
+      if (activeMed) {
+        logDoseDirect(activeMed.id, status);
+      }
+    });
 }
 
-// 8. Medications Display
+// 6. Medication List
 async function loadMedications() {
   try {
-    const res = await fetch('/api/medications');
+    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+    const res = await fetch(`/api/medications?phone=${targetPhone}`);
     const meds = await res.json();
-    const container = document.getElementById('medicationListContainer');
+    const container = document.getElementById('seniorMedList');
     if (!container) return;
+
+    const dict = I18N[currentLanguage] || I18N.en;
+
+    if (meds.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 24px 16px; background: white; border: 1px dashed #CBD5E1; border-radius: 16px; color: #64748B;">
+          No active medicines added yet. Use Caregiver Hub to add your daily medicines.
+        </div>
+      `;
+      return;
+    }
 
     container.innerHTML = meds.map(m => {
       const friendlyName = currentLanguage === 'te' ? m.senior_label_te : (currentLanguage === 'hi' ? m.senior_label_hi : m.senior_label);
       const isUrgent = m.remaining_pills <= 3;
+      const anchorTitle = m.timing_anchor.toUpperCase();
 
       return `
         <div class="med-card" style="border-left: 6px solid ${m.pill_color};">
@@ -526,18 +395,18 @@ async function loadMedications() {
             <div class="med-name">${friendlyName}</div>
             <div class="med-salt">${m.brand_name} (${m.dosage})</div>
             <div style="font-size: 13px; font-weight: 700; color: #475569; margin-top: 2px;">
-              ⏰ ${m.timing_anchor.toUpperCase()} • ${m.timing_relation.replace('_', ' ')}
+              ⏰ ${anchorTitle} • ${m.timing_relation.replace('_', ' ')}
             </div>
             <div class="med-stock ${isUrgent ? 'stock-urgent' : ''}">
-              ${isUrgent ? '⚠️ తక్కువగా ఉన్నాయి (Low Stock): ' : 'మిగిలినవి (Left): '} ${m.remaining_pills} మాత్రలు
+              ${isUrgent ? dict.lowStock : dict.leftText} ${m.remaining_pills} ${dict.pillsText}
             </div>
           </div>
           <div class="med-actions">
             <button class="btn-action btn-taken" onclick="logDoseDirect('${m.id}', 'taken')">
-              ✅ వేసుకున్నా
+              ${dict.btnTakenSmall}
             </button>
             <button class="btn-action btn-skip" onclick="logDoseDirect('${m.id}', 'skipped')">
-              తర్వాత
+              ${dict.btnLaterSmall}
             </button>
           </div>
         </div>
@@ -550,44 +419,74 @@ async function loadMedications() {
 
 async function logDoseDirect(medId, status) {
   try {
+    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
     await fetch('/api/medications/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         medication_id: medId,
         status: status,
-        notes: `Tapped button (${status})`
+        notes: `Tapped ${status}`,
+        phone: targetPhone
       })
     });
     loadMedications();
-    loadAlerts();
-    const msg = status === 'taken' ? 'మాత్ర తీసుకున్నట్లు రికార్డ్ చేశాను.' : 'మాత్ర వేసుకోనట్లు గుర్తించాను.';
-    speakText(msg, currentLanguage);
+    fetchGreeting();
   } catch (err) {
     console.error(err);
   }
 }
 
-// 9. Routine Service
+async function submitNewMedication() {
+  const name = document.getElementById('newMedNameInput').value.trim();
+  const anchor = document.getElementById('newMedAnchorInput').value;
+  if (!name) {
+    alert("Please enter medicine name.");
+    return;
+  }
+  const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+
+  try {
+    await fetch('/api/medications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        timing_anchor: anchor,
+        dosage: "1 pill",
+        phone: targetPhone
+      })
+    });
+    alert(`Added ${name} to senior's schedule!`);
+    document.getElementById('newMedNameInput').value = '';
+    loadMedications();
+    fetchGreeting();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// 7. Routine
 async function loadRoutine() {
   try {
-    const res = await fetch('/api/routine');
+    const targetPhone = currentUserRole === 'patient' ? currentUserPhone : currentLinkedPhone;
+    const res = await fetch(`/api/routine`);
     const r = await res.json();
     const list = document.getElementById('routineAnchorsList');
     if (!list) return;
 
     list.innerHTML = `
-      <div style="background: white; border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span><strong>🌅 ఉదయం టిఫిన్ (Breakfast):</strong> ${r.breakfast}</span>
-        <span style="color: var(--primary); font-weight: 800;">BP & షుగర్ మాత్ర</span>
+      <div style="background: white; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; margin-bottom: 6px;">
+        <span><strong>🌅 Breakfast:</strong> ${r.breakfast}</span>
+        <span style="color: #2563EB; font-weight: 700;">Morning Doses</span>
       </div>
-      <div style="background: white; border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span><strong>☀️ మధ్యాహ్నం భోజనం (Lunch):</strong> ${r.lunch}</span>
-        <span style="color: var(--primary); font-weight: 800;">గుండె & కాల్షియం మాత్ర</span>
+      <div style="background: white; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between; margin-bottom: 6px;">
+        <span><strong>☀️ Lunch:</strong> ${r.lunch}</span>
+        <span style="color: #2563EB; font-weight: 700;">Afternoon Doses</span>
       </div>
-      <div style="background: white; border: 1px solid var(--border-color); padding: 12px; border-radius: 12px; display: flex; justify-content: space-between;">
-        <span><strong>🌙 రాత్రి భోజనం (Dinner):</strong> ${r.dinner}</span>
-        <span style="color: var(--primary); font-weight: 800;">షుగర్ మాత్ర</span>
+      <div style="background: white; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 12px; display: flex; justify-content: space-between;">
+        <span><strong>🌙 Dinner:</strong> ${r.dinner}</span>
+        <span style="color: #2563EB; font-weight: 700;">Night Doses</span>
       </div>
     `;
   } catch (err) {
@@ -602,50 +501,48 @@ async function parseVoiceRoutine() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        patient_id: 'p_ramesh_72',
+        patient_id: currentUserPhone || '9849012345',
         voice_transcript: text,
         language: currentLanguage
       })
     });
-    const updated = await res.json();
+    await res.json();
     loadRoutine();
-    alert(`దినచర్య అప్‌డేట్ అయ్యింది: టిఫిన్ ${updated.breakfast}, భోజనం ${updated.lunch}, రాత్రి ${updated.dinner}`);
+    alert('Daily meal routine updated successfully!');
   } catch (err) {
     console.error(err);
   }
 }
 
-// 10. Caregiver Note
+// 8. Caregiver Actions
 async function submitCaregiverVoiceNote() {
   const input = document.getElementById('caregiverVoiceMsgInput');
   const msg = input.value.trim();
   if (!msg) {
-    alert('దయచేసి సందేశం టైప్ చేయండి.');
+    alert("Please type a message.");
     return;
   }
-
   try {
-    const res = await fetch('/api/companion/caregiver-note', {
+    await fetch('/api/companion/caregiver-note', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        caregiver_name: 'సురేష్ (అబ్బాయి)',
+        caregiver_name: currentUserName || 'Family Caregiver',
         message_text: msg,
-        assigned_anchor: 'breakfast'
+        assigned_anchor: currentAnchor,
+        patient_phone: currentLinkedPhone
       })
     });
-    alert('మీ సందేశం విజయవంతంగా సేవ్ అయ్యింది! రోగి యాప్‌లో ఇది వినిపిస్తుంది.');
+    alert("Personal voice reminder saved! It will play for the senior during their dose check-in.");
     input.value = '';
-    fetchGreeting();
   } catch (err) {
     console.error(err);
   }
 }
 
-// 11. Prescription vs Strip AI Audit
 async function runPrescriptionAudit() {
-  const btn = document.getElementById('i18n-btnRunAudit');
-  btn.textContent = '⚡ Gemini 3.5 AI అనాలసిస్ జరుగుతోంది...';
+  const btn = document.getElementById('btnRunAudit');
+  btn.textContent = '⚡ Running Gemini AI Salt Audit...';
 
   const rx = document.getElementById('auditRxInput').value;
   const strips = document.getElementById('auditStripInput').value;
@@ -677,14 +574,14 @@ async function runPrescriptionAudit() {
     runwayList.innerHTML = data.refill_runway.map(item => `
       <div class="runway-card ${item.urgency}">
         <div>
-          <div style="font-weight: 800; font-size: 16px;">${item.senior_label || item.brand_name}</div>
+          <div style="font-weight: 800; font-size: 15px;">${item.senior_label || item.brand_name}</div>
           <div style="font-size: 13px; color: #475569;">${item.brand_name} (${item.salt})</div>
-          <div style="font-size: 12px; font-weight: 700; margin-top: 4px; color: #64748B;">
-            మిగిలినవి: ${item.remaining_pills} మాత్రలు
+          <div style="font-size: 12px; font-weight: 700; margin-top: 2px; color: #64748B;">
+            Remaining: ${item.remaining_pills} pills
           </div>
         </div>
         <div style="text-align: right;">
-          <div style="font-size: 22px; font-weight: 900; color: ${item.urgency === 'urgent' ? '#DC2626' : '#2563EB'};">
+          <div style="font-size: 20px; font-weight: 900; color: ${item.urgency === 'urgent' ? '#DC2626' : '#2563EB'};">
             ${item.days_left} Days
           </div>
           <span style="font-size: 11px; font-weight: 800; text-transform: uppercase;">
@@ -694,64 +591,131 @@ async function runPrescriptionAudit() {
       </div>
     `).join('');
 
-    btn.textContent = '✅ AI ఆడిట్ పూర్తయింది';
+    btn.textContent = '✅ AI Salt Reconciliation Complete';
   } catch (err) {
     console.error(err);
-    btn.textContent = '⚡ AI ఆడిట్ ప్రారంభించండి (Run AI Audit)';
+    btn.textContent = '⚡ Run Gemini AI Salt Reconciliation';
   }
 }
 
-// 12. Emergency QR Pass
+// 9. Camera Live Feed
+async function openLiveCamera(target) {
+  currentCameraTarget = target;
+  const modal = document.getElementById('cameraModal');
+  if (modal) modal.style.display = 'flex';
+  const video = document.getElementById('cameraVideo');
+
+  try {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false
+      });
+      if (video) {
+        video.srcObject = cameraStream;
+        video.play();
+      }
+    } else {
+      document.getElementById('fallbackFileInput').click();
+    }
+  } catch (err) {
+    console.warn('Camera failed, using file input:', err);
+    const fb = document.getElementById('fallbackFileInput');
+    if (fb) fb.click();
+  }
+}
+
+function closeCameraModal() {
+  const modal = document.getElementById('cameraModal');
+  if (modal) modal.style.display = 'none';
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+
+function captureCameraPhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('cameraCanvas');
+  if (!video || !canvas) return;
+
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  applyCapturedPhoto(dataUrl);
+  closeCameraModal();
+}
+
+function handleFileFallback(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      applyCapturedPhoto(e.target.result);
+      closeCameraModal();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function applyCapturedPhoto(dataUrl) {
+  if (currentCameraTarget === 'audit_rx') {
+    const box = document.getElementById('rxPhotoPreviewBox');
+    const img = document.getElementById('auditRxPhotoImg');
+    if (box && img) {
+      img.src = dataUrl;
+      box.style.display = 'block';
+    }
+    const input = document.getElementById('auditRxInput');
+    if (input) {
+      input.value = "Rx (Photo Captured): Tab Telmikem 40 1-0-0, Tab Glycomet 500 1-0-1, Tab Ecosprin 75 0-1-0. Review 30 days.";
+    }
+  } else if (currentCameraTarget === 'audit_strip') {
+    const box = document.getElementById('stripPhotoPreviewBox');
+    const img = document.getElementById('auditStripPhotoImg');
+    if (box && img) {
+      img.src = dataUrl;
+      box.style.display = 'block';
+    }
+    const input = document.getElementById('auditStripInput');
+    if (input) {
+      input.value = "Chemist Strips (Photo Captured): Telmikem 40 (10 tabs), Glycomet 500 (10 tabs). Missing Ecosprin 75.";
+    }
+  }
+}
+
+// 10. Emergency QR
 async function fetchEmergencyQr() {
   try {
     const res = await fetch('/api/emergency/current-pin');
     const data = await res.json();
-    document.getElementById('emergencyQrImg').src = data.qr_code_data;
-    document.getElementById('rollingPinText').textContent = data.rolling_pin;
-    // Direct robust link that never redirects to #
+    const qrImg = document.getElementById('emergencyQrImg');
+    if (qrImg) qrImg.src = data.qr_code_data;
     const docLink = document.getElementById('doctorDirectLink');
-    docLink.href = data.emergency_url;
+    if (docLink) docLink.href = data.emergency_url;
   } catch (err) {
     console.error(err);
   }
 }
 
-// 13. Caretaker Notifications
 async function loadAlerts() {
   try {
     const res = await fetch('/api/alerts');
     const alerts = await res.json();
-    const container = document.getElementById('alertsLogFeed');
-    if (!container) return;
+    const feed = document.getElementById('alertsLogFeed');
+    if (!feed) return;
 
-    container.innerHTML = alerts.map(a => `
+    feed.innerHTML = alerts.map(a => `
       <div class="alert-item ${a.severity}">
         <div style="display:flex; justify-content:space-between; font-weight:800;">
           <span>${a.title}</span>
-          <span style="font-size:12px; opacity:0.8;">${a.timestamp}</span>
+          <span style="font-size:11px; opacity:0.8;">${a.timestamp}</span>
         </div>
-        <div style="margin-top:4px;">${a.message}</div>
-        <div style="font-size:11px; margin-top:4px; color:#475569;">Sent to: ${a.recipient_email} (${a.status.toUpperCase()})</div>
+        <div style="margin-top:2px;">${a.message}</div>
       </div>
     `).join('');
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-async function simulateCaregiverAlert() {
-  try {
-    await fetch('/api/alerts/trigger', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        severity: 'critical',
-        title: '⚠️ Missed BP Tablet Alert',
-        message: 'Ramesh Rao did not take morning BP tablet (Telmikem 40). Please call immediately.'
-      })
-    });
-    alert('Email alert sent to suresh.rao@example.com');
-    loadAlerts();
   } catch (err) {
     console.error(err);
   }

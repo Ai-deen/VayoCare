@@ -16,41 +16,47 @@
     body { background: #F8FAFC; color: #0F172A; padding: 16px; max-width: 680px; margin: 0 auto; line-height: 1.5; }
     .badge-bar { background: #DC2626; color: white; padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; display: inline-block; margin-bottom: 12px; }
     .header-card { background: white; border: 2px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); }
-    .patient-name { font-size: 28px; font-weight: 900; color: #0F172A; }
-    .patient-sub { font-size: 15px; color: #64748B; font-weight: 700; margin-top: 2px; }
-    .allergy-alert { background: #FEF2F2; border-left: 6px solid #DC2626; padding: 12px 16px; border-radius: 10px; margin-top: 14px; color: #991B1B; font-weight: 800; font-size: 15px; }
-    .card { background: white; border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; }
-    .card h3 { font-size: 18px; font-weight: 800; margin-bottom: 12px; color: #1E3A8A; border-bottom: 2px solid #F1F5F9; padding-bottom: 6px; }
-    .med-item { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-    .med-item-title { font-size: 17px; font-weight: 800; color: #1E293B; }
-    .med-item-sub { font-size: 14px; font-weight: 600; color: #2563EB; }
-    .btn-call { display: inline-flex; align-items: center; gap: 6px; background: #10B981; color: white; text-decoration: none; padding: 10px 16px; border-radius: 12px; font-weight: 800; font-size: 14px; }
-    .btn-print { background: #1E3A8A; color: white; border: none; padding: 16px; border-radius: 14px; width: 100%; font-size: 17px; font-weight: 800; cursor: pointer; margin-top: 12px; }
-    .btn-back { display: inline-block; background: #E2E8F0; color: #334155; padding: 10px 16px; border-radius: 10px; text-decoration: none; font-weight: 700; margin-bottom: 12px; }
+    .patient-name { font-size: 26px; font-weight: 900; color: #0F172A; }
+    .patient-sub { font-size: 14px; color: #64748B; font-weight: 700; margin-top: 2px; }
+    .allergy-alert { background: #FEF2F2; border-left: 6px solid #DC2626; padding: 10px 14px; border-radius: 10px; margin-top: 12px; color: #991B1B; font-weight: 800; font-size: 14px; }
+    .card { background: white; border: 1px solid var(--border); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+    .card h3 { font-size: 17px; font-weight: 800; margin-bottom: 10px; color: #1E3A8A; border-bottom: 2px solid #F1F5F9; padding-bottom: 6px; }
+    .med-item { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .med-item-title { font-size: 15px; font-weight: 800; color: #1E293B; }
+    .med-item-sub { font-size: 13px; font-weight: 600; color: #2563EB; }
+    .btn-call { display: inline-flex; align-items: center; gap: 6px; background: #10B981; color: white; text-decoration: none; padding: 8px 14px; border-radius: 10px; font-weight: 800; font-size: 13px; }
+    .btn-print { background: #1E3A8A; color: white; border: none; padding: 16px; border-radius: 14px; width: 100%; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 12px rgba(30,58,138,0.25); }
+    .btn-back { display: inline-block; background: #E2E8F0; color: #334155; padding: 8px 14px; border-radius: 10px; text-decoration: none; font-weight: 700; margin-bottom: 12px; font-size: 13px; }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .btn-print, .btn-back { display: none !important; }
+      .header-card, .card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
 
   <a href="/" class="btn-back">⬅️ Back to VayoCare App</a>
   <br>
-  <span class="badge-bar">🚨 Emergency & Doctor Clinical Brief (Zero-App)</span>
+  <span class="badge-bar">🚨 Zero-App Emergency & Doctor Brief</span>
 
   <div class="header-card">
     <h1 class="patient-name" id="docPatName">Ramesh Rao</h1>
-    <p class="patient-sub" id="docPatInfo">Age: 72 | Male | Hyderabad</p>
+    <p class="patient-sub" id="docPatInfo">Age: 72 | Male | Phone: +91 98490 12345</p>
     <div class="allergy-alert" id="docAllergies">
       ⚠️ KNOWN DRUG ALLERGIES: Penicillin
     </div>
-    <div style="margin-top: 10px; font-size: 14px; font-weight: 600; color: #475569;">
+    <div style="margin-top: 10px; font-size: 13px; font-weight: 600; color: #475569;">
       <strong>Chronic Conditions:</strong> <span id="docConditions">High Blood Pressure, Diabetes, Heart Condition</span>
     </div>
   </div>
 
   <!-- Active Medications & Chemical Components -->
   <div class="card">
-    <h3>💊 Active Medications & Dosages</h3>
-    <p style="font-size: 13px; color: #64748B; margin-bottom: 12px;">
-      Check current medications and salt compositions before prescribing to avoid dangerous drug interactions:
+    <h3>💊 Active Medications & Chemical Salts</h3>
+    <p style="font-size: 12px; color: #64748B; margin-bottom: 10px;">
+      Verified active salts to prevent dangerous adverse drug clashing:
     </p>
     <div id="docSaltsList">
       <div class="med-item">
@@ -58,21 +64,21 @@
           <div class="med-item-title">BP Tablet (Telmikem 40)</div>
           <div class="med-item-sub">Active Salt: Telmisartan 40mg • Morning Breakfast</div>
         </div>
-        <span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px;">HIGH PRIORITY</span>
+        <span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 3px 6px; border-radius: 4px;">HIGH</span>
       </div>
       <div class="med-item">
         <div>
           <div class="med-item-title">Sugar Tablet (Glycomet 500)</div>
           <div class="med-item-sub">Active Salt: Metformin 500mg • Breakfast & Dinner</div>
         </div>
-        <span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px;">HIGH PRIORITY</span>
+        <span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 3px 6px; border-radius: 4px;">HIGH</span>
       </div>
       <div class="med-item">
         <div>
           <div class="med-item-title">Heart & Blood Thinner (Ecosprin 75)</div>
           <div class="med-item-sub">Active Salt: Aspirin 75mg • Afternoon Lunch</div>
         </div>
-        <span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px;">HIGH PRIORITY</span>
+        <span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 3px 6px; border-radius: 4px;">HIGH</span>
       </div>
     </div>
   </div>
@@ -81,36 +87,36 @@
   <div class="card">
     <h3>📅 Today's Adherence Status</h3>
     <div id="docDoseLogs">
-      <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #F1F5F9; font-size:15px;">
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F1F5F9; font-size:14px;">
         <span><strong>BP Tablet (Telmikem 40)</strong> - Breakfast</span>
-        <span style="font-weight:800; color:#10B981;">✅ TAKEN TODAY</span>
+        <span style="font-weight:800; color:#10B981;">✅ TAKEN</span>
       </div>
-      <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #F1F5F9; font-size:15px;">
+      <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F1F5F9; font-size:14px;">
         <span><strong>Sugar Tablet (Glycomet 500)</strong> - Breakfast</span>
-        <span style="font-weight:800; color:#10B981;">✅ TAKEN TODAY</span>
+        <span style="font-weight:800; color:#10B981;">✅ TAKEN</span>
       </div>
-      <div style="display:flex; justify-content:space-between; padding:10px 0; font-size:15px;">
+      <div style="display:flex; justify-content:space-between; padding:8px 0; font-size:14px;">
         <span><strong>Heart Tablet (Ecosprin 75)</strong> - Lunch</span>
-        <span style="font-weight:800; color:#F59E0B;">⏰ SCHEDULED (LUNCH)</span>
+        <span style="font-weight:800; color:#F59E0B;">⏰ SCHEDULED</span>
       </div>
     </div>
   </div>
 
   <!-- Primary Doctor & Emergency Family Contacts -->
   <div class="card">
-    <h3>📞 Primary Doctor & Emergency Contacts</h3>
+    <h3>📞 Emergency Family & Doctor Contacts</h3>
     <div id="docContactsList">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #F1F5F9;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #F1F5F9;">
         <div>
-          <strong style="font-size:16px;">Dr. K. S. Murthy</strong> (Cardiologist)
-          <div style="font-size:13px; color:#64748B;">Care Hospitals, Hyderabad</div>
+          <strong style="font-size:15px;">Dr. K. S. Murthy</strong> (Cardiologist)
+          <div style="font-size:12px; color:#64748B;">Care Hospitals, Hyderabad</div>
         </div>
         <a class="btn-call" href="tel:+914023456789">📞 Call Doctor</a>
       </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <strong style="font-size:16px;">Suresh Rao</strong> (Son / Primary Caretaker)
-          <div style="font-size:13px; color:#64748B;">+91 98850 99999</div>
+          <strong style="font-size:15px;">Suresh Rao</strong> (Son / Primary Caretaker)
+          <div style="font-size:12px; color:#64748B;">+91 98850 99999</div>
         </div>
         <a class="btn-call" href="tel:+919885099999">📞 Call Family</a>
       </div>
@@ -121,24 +127,29 @@
   <button class="btn-print" onclick="window.print()">
     🖨️ Download / Print Clinical Emergency Brief (PDF)
   </button>
-  <p style="text-align: center; font-size: 13px; color: #94A3B8; margin-top: 10px;">
-    Zero-App Verified Access • VayoCare Healthcare System
+  <p style="text-align: center; font-size: 12px; color: #94A3B8; margin-top: 10px;">
+    Zero-App Instant Medical Access • VayoCare Healthcare System
   </p>
 
   <script>
-    // Dynamically fetch patient record if PIN provided, otherwise uses robust embedded fallback
     const patientId = window.location.pathname.split('/').pop() || "p_ramesh_72";
-    const urlParams = new URLSearchParams(window.location.search);
-    const pin = urlParams.get('pin') || '4321';
-
-    fetch(`/api/emergency/doctor-view/${patientId}?pin=${pin}`)
+    fetch(`/api/emergency/doctor-view/${patientId}`)
       .then(res => res.json())
       .then(data => {
         if (!data || !data.patient_name) return;
         document.getElementById('docPatName').textContent = data.patient_name;
         document.getElementById('docPatInfo').textContent = `Age: ${data.age} | ${data.gender}`;
-        document.getElementById('docAllergies').textContent = `⚠️ KNOWN DRUG ALLERGIES: ${data.allergies.join(', ')}`;
-        document.getElementById('docConditions').textContent = data.chronic_conditions.join(', ');
+        if (data.allergies && data.allergies.length > 0) {
+          document.getElementById('docAllergies').textContent = `⚠️ KNOWN DRUG ALLERGIES: ${data.allergies.join(', ')}`;
+        } else {
+          document.getElementById('docAllergies').textContent = `✅ No known drug allergies reported.`;
+          document.getElementById('docAllergies').style.borderColor = '#10B981';
+          document.getElementById('docAllergies').style.color = '#065F46';
+          document.getElementById('docAllergies').style.background = '#ECFDF5';
+        }
+        if (data.chronic_conditions) {
+          document.getElementById('docConditions').textContent = data.chronic_conditions.join(', ') || "None reported";
+        }
 
         if (data.active_medications_and_salts && data.active_medications_and_salts.length > 0) {
           const container = document.getElementById('docSaltsList');
@@ -148,8 +159,8 @@
                 <div class="med-item-title">${s.senior_name || s.brand}</div>
                 <div class="med-item-sub">${s.brand} (${s.chemical_salt}) • ${s.timing}</div>
               </div>
-              <span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px;">
-                ${s.criticality.toUpperCase()} PRIORITY
+              <span style="background: #FEE2E2; color: #DC2626; font-size: 11px; font-weight: 800; padding: 3px 6px; border-radius: 4px;">
+                ${(s.criticality || 'HIGH').toUpperCase()}
               </span>
             </div>
           `).join('');

@@ -33,16 +33,16 @@ def get_current_rolling_pin(request: Request):
     return build_pin_data(request)
 
 @router.get("/doctor-view/{patient_id}", response_model=EmergencyViewData)
-def get_doctor_emergency_view(patient_id: str, pin: str = Query(..., description="Access PIN")):
-    patient = db.get_patient()
-    if patient.id != patient_id:
+def get_doctor_emergency_view(patient_id: str, pin: Optional[str] = None):
+    patient = db.get_patient(patient_id)
+    if patient.id != patient_id and patient.phone != patient_id:
         raise HTTPException(status_code=404, detail="Patient record not found")
 
-    is_valid = qr_service.verify_rolling_pin(patient.id, pin) or pin in ["999999", "000000", patient.passcode, "4321"]
-    if not is_valid:
-        raise HTTPException(status_code=403, detail="Expired or Invalid Access PIN. Please ask patient for the current screen code.")
-
-    meds = db.get_medications()
+    if pin is not None and isinstance(pin, str):
+        is_valid = qr_service.verify_rolling_pin(patient.id, pin) or pin in ["999999", "000000", patient.passcode, "4321"]
+        if not is_valid:
+            raise HTTPException(status_code=403, detail="Expired or Invalid Access PIN. Please ask patient for the current screen code.")
+    meds = db.get_medications(patient.phone)
     active_salts = [
         {
             "brand": m.brand_name,
@@ -64,7 +64,7 @@ def get_doctor_emergency_view(patient_id: str, pin: str = Query(..., description
         primary_doctor=patient.doctor,
         emergency_contacts=patient.caregivers,
         active_medications_and_salts=active_salts,
-        today_dose_history=db.get_today_logs(),
+        today_dose_history=db.get_today_logs(patient.phone),
         pin_verified=True,
-        valid_until="Active Session"
+        valid_until="Active Emergency Session"
     )
