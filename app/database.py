@@ -1,8 +1,12 @@
 import os
-import json
 import uuid
 from datetime import datetime
 from typing import List, Optional, Dict, Any
+
+from app.config import settings
+from app.db.session import SessionLocal, init_db
+from app.db.seed import seed_demo_data
+from app.db import models as db_models
 from app.models import (
     Patient, Caregiver, DoctorContact, RoutineSchedule,
     Medication, DoseLog, AlertNotification, CaregiverVoiceNote,
@@ -10,221 +14,13 @@ from app.models import (
 )
 from app.services.security_service import security_service
 
-DATA_FILE = "vayocare_db.json"
-
 class MultiUserDB:
     def __init__(self):
-        self.patients: Dict[str, Patient] = {}
-        self.medications: Dict[str, Dict[str, Medication]] = {}
-        self.dose_logs: Dict[str, List[DoseLog]] = {}
-        self.alerts: Dict[str, List[AlertNotification]] = {}
+        # Initialize schema and seed demo data
+        init_db()
+        with SessionLocal() as session:
+            seed_demo_data(session)
         self.active_phone: str = "9849012345"
-        
-        self._init_demo_patient()
-        self._load_from_disk()
-
-    def _init_demo_patient(self):
-        demo_phone = "9849012345"
-        self.patients[demo_phone] = Patient(
-            id="p_ramesh_72",
-            name="Ramesh Rao",
-            age=72,
-            gender="Male",
-            phone=demo_phone,
-            passcode=security_service.hash_passcode("4321"),
-            language_preference="en",
-            chronic_conditions=["High Blood Pressure (Hypertension)", "Sugar (Diabetes)", "Heart Condition"],
-            allergies=["Penicillin"],
-            routine=RoutineSchedule(
-                wake_up="07:30",
-                breakfast="09:00",
-                lunch="13:30",
-                dinner="20:30",
-                bedtime="22:30",
-                notes="Morning tea at 8:00, tiffin at 9:00"
-            ),
-            caregivers=[
-                Caregiver(
-                    id="c_suresh_1",
-                    name="Suresh Rao",
-                    relationship="Son",
-                    phone="9885099999",
-                    email="suresh.rao@example.com",
-                    role="caregiver",
-                    notify_missed_dose=True,
-                    notify_low_stock=True
-                )
-            ],
-            doctor=DoctorContact(
-                name="Dr. K. S. Murthy",
-                specialty="Cardiologist",
-                hospital="Care Hospitals",
-                phone="+91 40 2345 6789"
-            ),
-            voice_notes=[
-                CaregiverVoiceNote(
-                    id="vn_1",
-                    caregiver_name="Suresh (Son)",
-                    message_text="Dad, please remember to take your morning BP and Sugar tablets after breakfast.",
-                    created_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    assigned_anchor="breakfast"
-                )
-            ],
-            appointments=[
-                Appointment(
-                    id="appt_001",
-                    doctor_name="Dr. K. S. Murthy",
-                    specialty="Cardiologist",
-                    hospital="Care Hospitals",
-                    phone="+91 40 2345 6789",
-                    date="2026-11-20",
-                    time="10:30",
-                    notes="Quarterly cardiac routine evaluation",
-                    status="scheduled"
-                )
-            ],
-            activity_logs=[
-                ActivityLog(
-                    id="act_01",
-                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    actor_role="system",
-                    action="PROFILE_INITIALIZED",
-                    details="Ramesh Rao health circle securely initialized."
-                )
-            ]
-        )
-
-        self.medications[demo_phone] = {
-            "m_telmisartan": Medication(
-                id="m_telmisartan",
-                brand_name="Telmikem 40",
-                senior_label="BP Tablet",
-                senior_label_te="BP మాత్ర",
-                senior_label_hi="बीपी की गोली",
-                salt_composition="Telmisartan 40mg",
-                dosage="40mg (1 pill)",
-                timing_anchor="breakfast",
-                timing_relation="after_food",
-                criticality="high",
-                remaining_pills=2,
-                daily_doses=1,
-                pill_color="#EF4444",
-                purpose="Blood Pressure",
-                approval_status="approved",
-                added_by="elder"
-            ),
-            "m_metformin": Medication(
-                id="m_metformin",
-                brand_name="Glycomet 500",
-                senior_label="Sugar Tablet",
-                senior_label_te="షుగర్ మాత్ర",
-                senior_label_hi="शुगर की गोली",
-                salt_composition="Metformin 500mg",
-                dosage="500mg (1 pill)",
-                timing_anchor="breakfast",
-                timing_relation="after_food",
-                criticality="high",
-                remaining_pills=18,
-                daily_doses=2,
-                pill_color="#3B82F6",
-                purpose="Sugar Control",
-                approval_status="approved",
-                added_by="elder"
-            ),
-            "m_ecosprin": Medication(
-                id="m_ecosprin",
-                brand_name="Ecosprin 75",
-                senior_label="Heart & Blood Thinner",
-                senior_label_te="గుండె / బ్లడ్ మాత్ర",
-                senior_label_hi="दिल व खून पतला करने की गोली",
-                salt_composition="Aspirin 75mg",
-                dosage="75mg",
-                timing_anchor="lunch",
-                timing_relation="after_food",
-                criticality="high",
-                remaining_pills=14,
-                daily_doses=1,
-                pill_color="#F59E0B",
-                purpose="Cardiovascular",
-                approval_status="approved",
-                added_by="elder"
-            ),
-            "m_shelcal": Medication(
-                id="m_shelcal",
-                brand_name="Shelcal 500",
-                senior_label="Calcium & Bone Tablet",
-                senior_label_te="ఎముకల కాల్షియం మాత్ర",
-                senior_label_hi="कैल्शियम की गोली",
-                salt_composition="Calcium + Vitamin D3",
-                dosage="500mg",
-                timing_anchor="lunch",
-                timing_relation="after_food",
-                criticality="low",
-                remaining_pills=3,
-                daily_doses=1,
-                pill_color="#10B981",
-                purpose="Bone Strength",
-                approval_status="approved",
-                added_by="elder"
-            )
-        }
-
-        self.dose_logs[demo_phone] = [
-            DoseLog(
-                id="log_001",
-                medication_id="m_telmisartan",
-                medication_name="Telmikem 40",
-                senior_label="BP Tablet",
-                patient_id="p_ramesh_72",
-                timing_anchor="breakfast",
-                status="pending",
-                logged_at=None,
-                feedback_notes="Awaiting confirmation"
-            )
-        ]
-
-        self.alerts[demo_phone] = [
-            AlertNotification(
-                id="alt_01",
-                patient_id="p_ramesh_72",
-                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M"),
-                severity="info",
-                title="VayoCare Connected",
-                message="Routine anchored to 09:00 AM Breakfast / Tiffin.",
-                recipient_email="suresh.rao@example.com",
-                status="delivered"
-            )
-        ]
-
-    def _save_to_disk(self):
-        try:
-            data = {
-                "patients": {p: pat.model_dump() for p, pat in self.patients.items()},
-                "medications": {p: {mid: m.model_dump() for mid, m in meds.items()} for p, meds in self.medications.items()},
-                "dose_logs": {p: [l.model_dump() for l in logs] for p, logs in self.dose_logs.items()},
-                "alerts": {p: [a.model_dump() for a in alts] for p, alts in self.alerts.items()}
-            }
-            with open(DATA_FILE, "w", encoding="utf-8") as f:
-                json.dump(data, f, default=str)
-        except Exception:
-            pass
-
-    def _load_from_disk(self):
-        if not os.path.exists(DATA_FILE):
-            return
-        try:
-            with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            for p, pdata in data.get("patients", {}).items():
-                self.patients[p] = Patient(**pdata)
-            for p, mdict in data.get("medications", {}).items():
-                self.medications[p] = {mid: Medication(**mdata) for mid, mdata in mdict.items()}
-            for p, llist in data.get("dose_logs", {}).items():
-                self.dose_logs[p] = [DoseLog(**ldata) for ldata in llist]
-            for p, alist in data.get("alerts", {}).items():
-                self.alerts[p] = [AlertNotification(**adata) for adata in alist]
-        except Exception:
-            pass
 
     def _normalize_phone(self, phone: Any) -> str:
         if not phone or not isinstance(phone, str):
@@ -232,228 +28,680 @@ class MultiUserDB:
         clean = "".join(c for c in phone if c.isdigit())
         return clean or self.active_phone
 
+    def _convert_db_patient_to_pydantic(self, p: db_models.Patient, session) -> Patient:
+        # Load caregivers via caregiver_links
+        caregivers = []
+        for link in p.caregiver_links:
+            cg_user = link.caregiver_user
+            caregivers.append(
+                Caregiver(
+                    id=link.id,
+                    name=cg_user.name if cg_user else "Caregiver",
+                    relationship=getattr(link, "relationship_type", "Caregiver") or "Caregiver",
+                    phone=cg_user.phone if cg_user else "",
+                    email=cg_user.email or "",
+                    role="caregiver",
+                    notify_missed_dose=link.notify_missed_dose,
+                    notify_low_stock=link.notify_low_stock
+                )
+            )
+
+        # Routine
+        routine_obj = RoutineSchedule()
+        if p.routine:
+            routine_obj = RoutineSchedule(
+                wake_up=p.routine.wake_up or "07:30",
+                breakfast=p.routine.breakfast or "09:00",
+                lunch=p.routine.lunch or "13:30",
+                dinner=p.routine.dinner or "20:30",
+                bedtime=p.routine.bedtime or "22:00",
+                notes=p.routine.notes or ""
+            )
+
+        # Doctor
+        doc_obj = DoctorContact(
+            name=p.doctor_name or "Primary Doctor",
+            specialty=p.doctor_specialty or "General Physician",
+            hospital=p.doctor_hospital or "Local Clinic",
+            phone=p.doctor_phone or ""
+        )
+
+        # Voice notes
+        v_notes = [
+            CaregiverVoiceNote(
+                id=vn.id,
+                caregiver_name=vn.caregiver_name,
+                message_text=vn.message_text,
+                audio_url=vn.audio_url,
+                created_at=vn.created_at.strftime("%Y-%m-%d %H:%M") if vn.created_at else "",
+                assigned_anchor=vn.assigned_anchor or "breakfast"
+            ) for vn in p.voice_notes
+        ]
+
+        # Appointments
+        appts = [
+            Appointment(
+                id=apt.id,
+                doctor_name=apt.doctor_name,
+                specialty=apt.specialty,
+                hospital=apt.hospital,
+                phone=apt.phone or "",
+                date=apt.date,
+                time=apt.time,
+                notes=apt.notes or "",
+                status=apt.status or "scheduled"
+            ) for apt in p.appointments
+        ]
+
+        # Activity logs
+        acts = [
+            ActivityLog(
+                id=act.id,
+                timestamp=act.timestamp.strftime("%Y-%m-%d %H:%M:%S") if act.timestamp else "",
+                actor_role=act.actor_role,
+                action=act.action,
+                details=act.details or ""
+            ) for act in sorted(p.activity_logs, key=lambda x: x.timestamp or datetime.min, reverse=True)
+        ]
+
+        # Passcode from user
+        user_passcode = p.user.hashed_passcode if p.user else security_service.hash_passcode("1234")
+
+        return Patient(
+            id=p.id,
+            name=p.name,
+            age=p.age or 70,
+            gender=p.gender or "Not Specified",
+            phone=p.phone,
+            passcode=user_passcode,
+            language_preference=p.language_preference or "en",
+            chronic_conditions=p.chronic_conditions or [],
+            allergies=p.allergies or [],
+            routine=routine_obj,
+            caregivers=caregivers,
+            doctor=doc_obj,
+            voice_notes=v_notes,
+            appointments=appts,
+            activity_logs=acts
+        )
+
     def get_patient(self, phone: Optional[str] = None) -> Patient:
-        p_key = self._normalize_phone(phone)
-        if p_key in self.patients:
-            return self.patients[p_key]
-        for pat in self.patients.values():
-            if pat.id == phone or pat.phone == phone:
-                return pat
-        return self.patients.get(self.active_phone, list(self.patients.values())[0])
+        with SessionLocal() as session:
+            if phone and isinstance(phone, str):
+                clean = "".join(c for c in phone if c.isdigit())
+                p = session.query(db_models.Patient).filter(
+                    (db_models.Patient.phone == clean) | (db_models.Patient.id == phone)
+                ).first()
+                if p:
+                    return self._convert_db_patient_to_pydantic(p, session)
+
+            # When phone is not provided, check demo patient first if DEMO_MODE
+            if settings.DEMO_MODE:
+                demo = session.query(db_models.Patient).filter(db_models.Patient.phone == "9849012345").first()
+                if demo:
+                    return self._convert_db_patient_to_pydantic(demo, session)
+            
+            clean = self._normalize_phone(phone)
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == phone)
+            ).first()
+            if p:
+                return self._convert_db_patient_to_pydantic(p, session)
+            
+            # Or first patient
+            first_p = session.query(db_models.Patient).first()
+            if first_p:
+                return self._convert_db_patient_to_pydantic(first_p, session)
+
+            return self.get_or_create_patient(clean)
 
     def get_or_create_patient(self, phone: str, name: str = "", role: str = "patient") -> Patient:
         clean = self._normalize_phone(phone)
         self.active_phone = clean
-        if clean in self.patients:
-            pat = self.patients[clean]
-            if name and (pat.name == "Senior Patient" or not pat.name):
-                pat.name = name
-            return pat
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(db_models.Patient.phone == clean).first()
+            if p:
+                if name and (p.name == "Senior Patient" or not p.name):
+                    p.name = name
+                    session.commit()
+                return self._convert_db_patient_to_pydantic(p, session)
 
-        new_pat = Patient(
-            id=f"p_{clean}",
-            name=name or "Senior Patient",
-            age=70,
-            gender="Not Specified",
-            phone=clean,
-            passcode=security_service.hash_passcode("1234"),
-            language_preference="en",
-            chronic_conditions=[],
-            allergies=[],
-            routine=RoutineSchedule(
+            # Create User if not exists
+            user = session.query(db_models.User).filter(db_models.User.phone == clean).first()
+            if not user:
+                user = db_models.User(
+                    id=f"u_{clean}",
+                    phone=clean,
+                    name=name or "Senior Patient",
+                    role=role,
+                    hashed_passcode=security_service.hash_passcode("1234")
+                )
+                session.add(user)
+                session.flush()
+
+            new_pat = db_models.Patient(
+                id=f"p_{clean}",
+                user_id=user.id,
+                name=name or "Senior Patient",
+                age=70,
+                gender="Not Specified",
+                phone=clean,
+                language_preference="en",
+                chronic_conditions=[],
+                allergies=[],
+                doctor_name="Primary Doctor",
+                doctor_specialty="General Physician",
+                doctor_hospital="Local Clinic"
+            )
+            session.add(new_pat)
+            session.flush()
+
+            # Create initial routine
+            routine = db_models.Routine(
+                id=f"r_{clean}",
+                patient_id=new_pat.id,
                 wake_up="07:30",
                 breakfast="09:00",
                 lunch="13:30",
                 dinner="20:30",
                 bedtime="22:00",
                 notes="Configured during onboarding"
-            ),
-            caregivers=[],
-            doctor=DoctorContact(
-                name="Primary Doctor",
-                specialty="General Physician",
-                hospital="Local Clinic",
-                phone=""
-            ),
-            voice_notes=[],
-            appointments=[],
-            activity_logs=[
-                ActivityLog(
-                    id=f"act_{int(datetime.now().timestamp())}",
-                    timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    actor_role=role,
-                    action="ACCOUNT_CREATED",
-                    details=f"Patient account {clean} created."
-                )
-            ]
-        )
-        self.patients[clean] = new_pat
-        self.medications[clean] = {}
-        self.dose_logs[clean] = []
-        self.alerts[clean] = []
-        self._save_to_disk()
-        return new_pat
+            )
+            session.add(routine)
+
+            # Create initial activity log
+            act = db_models.ActivityLog(
+                id=f"act_{uuid.uuid4().hex}",
+                patient_id=new_pat.id,
+                actor_role=role,
+                action="ACCOUNT_CREATED",
+                details=f"Patient account {clean} created.",
+                timestamp=datetime.now()
+            )
+            session.add(act)
+            session.commit()
+            return self._convert_db_patient_to_pydantic(new_pat, session)
 
     def add_activity_log(self, phone: str, actor_role: str, action: str, details: str):
-        pat = self.get_patient(phone)
-        log = ActivityLog(
-            id=f"act_{int(datetime.now().timestamp()*1000)}",
-            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            actor_role=actor_role,
-            action=action,
-            details=details
-        )
-        pat.activity_logs.insert(0, log)
-        self._save_to_disk()
-        return log
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p:
+                p = session.query(db_models.Patient).filter(db_models.Patient.phone == self.active_phone).first()
+            if p:
+                act = db_models.ActivityLog(
+                    id=f"act_{uuid.uuid4().hex}",
+                    patient_id=p.id,
+                    actor_role=actor_role,
+                    action=action,
+                    details=details,
+                    timestamp=datetime.now()
+                )
+                session.add(act)
+                session.commit()
+                return ActivityLog(
+                    id=act.id,
+                    timestamp=act.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    actor_role=act.actor_role,
+                    action=act.action,
+                    details=act.details
+                )
+        return None
 
     def get_activity_logs(self, phone: Optional[str] = None) -> List[ActivityLog]:
         pat = self.get_patient(phone)
         return pat.activity_logs
 
     def update_routine(self, schedule: RoutineSchedule, phone: Optional[str] = None) -> RoutineSchedule:
-        patient = self.get_patient(phone)
-        patient.routine = schedule
-        self.add_activity_log(patient.phone, "elder", "ROUTINE_UPDATED", f"Breakfast: {schedule.breakfast}, Lunch: {schedule.lunch}, Dinner: {schedule.dinner}")
-        self._save_to_disk()
-        return patient.routine
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p:
+                p = session.query(db_models.Patient).first()
+            if p:
+                if not p.routine:
+                    p.routine = db_models.Routine(patient_id=p.id)
+                p.routine.wake_up = schedule.wake_up
+                p.routine.breakfast = schedule.breakfast
+                p.routine.lunch = schedule.lunch
+                p.routine.dinner = schedule.dinner
+                p.routine.bedtime = schedule.bedtime
+                p.routine.notes = schedule.notes
+                session.commit()
+                self.add_activity_log(p.phone, "elder", "ROUTINE_UPDATED", f"Breakfast: {schedule.breakfast}, Lunch: {schedule.lunch}, Dinner: {schedule.dinner}")
+        return schedule
 
     def add_caregiver_voice_note(self, caregiver_name: str, message: str, anchor: str = "breakfast", phone: Optional[str] = None) -> CaregiverVoiceNote:
-        patient = self.get_patient(phone)
-        note = CaregiverVoiceNote(
-            id=f"vn_{int(datetime.now().timestamp())}",
-            caregiver_name=caregiver_name,
-            message_text=message,
-            created_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
-            assigned_anchor=anchor
-        )
-        patient.voice_notes.insert(0, note)
-        self.add_activity_log(patient.phone, "caretaker", "VOICE_NOTE_SENT", f"{caregiver_name} added a voice note for {anchor}.")
-        self._save_to_disk()
-        return note
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p:
+                p = session.query(db_models.Patient).first()
+            vn = db_models.VoiceNote(
+                id=f"vn_{uuid.uuid4().hex}",
+                patient_id=p.id if p else "p_ramesh_72",
+                caregiver_name=caregiver_name,
+                message_text=message,
+                assigned_anchor=anchor,
+                created_at=datetime.now()
+            )
+            session.add(vn)
+            session.commit()
+            if p:
+                self.add_activity_log(p.phone, "caretaker", "VOICE_NOTE_SENT", f"{caregiver_name} added a voice note for {anchor}.")
+            return CaregiverVoiceNote(
+                id=vn.id,
+                caregiver_name=vn.caregiver_name,
+                message_text=vn.message_text,
+                audio_url=vn.audio_url,
+                created_at=vn.created_at.strftime("%Y-%m-%d %H:%M"),
+                assigned_anchor=vn.assigned_anchor
+            )
 
     def get_medications(self, phone: Optional[str] = None) -> List[Medication]:
-        p_key = self._normalize_phone(phone)
-        if p_key in self.medications and len(self.medications[p_key]) > 0:
-            return list(self.medications[p_key].values())
-        return list(self.medications.get("9849012345", {}).values())
+        with SessionLocal() as session:
+            p = None
+            if phone and isinstance(phone, str):
+                clean = "".join(c for c in phone if c.isdigit())
+                p = session.query(db_models.Patient).filter(
+                    (db_models.Patient.phone == clean) | (db_models.Patient.id == phone)
+                ).first()
+            elif settings.DEMO_MODE:
+                p = session.query(db_models.Patient).filter(db_models.Patient.phone == "9849012345").first()
+            
+            if not p:
+                clean = self._normalize_phone(phone)
+                p = session.query(db_models.Patient).filter(
+                    (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+                ).first()
+            if not p and settings.DEMO_MODE:
+                p = session.query(db_models.Patient).filter(db_models.Patient.phone == "9849012345").first()
+
+            if p:
+                meds = session.query(db_models.Medication).filter(db_models.Medication.patient_id == p.id).all()
+                if meds or phone:
+                    return [
+                        Medication(
+                            id=m.id,
+                            brand_name=m.brand_name,
+                            senior_label=m.senior_label,
+                            senior_label_te=m.senior_label_te or "",
+                            senior_label_hi=m.senior_label_hi or "",
+                            salt_composition=m.salt_composition or "",
+                            dosage=m.dosage,
+                            timing_anchor=m.timing_anchor,
+                            timing_relation=m.timing_relation or "after_food",
+                            criticality=m.criticality or "high",
+                            remaining_pills=m.remaining_pills or 0,
+                            daily_doses=m.daily_doses or 1,
+                            pill_color=m.pill_color or "#3B82F6",
+                            purpose=m.purpose or "",
+                            approval_status=m.approval_status or "approved",
+                            added_by=m.added_by or "elder"
+                        ) for m in meds
+                    ]
+            
+            # If still empty and in demo mode, return demo medications
+            if settings.DEMO_MODE:
+                demo_p = session.query(db_models.Patient).filter(db_models.Patient.phone == "9849012345").first()
+                if demo_p:
+                    demo_meds = session.query(db_models.Medication).filter(db_models.Medication.patient_id == demo_p.id).all()
+                    return [
+                        Medication(
+                            id=m.id,
+                            brand_name=m.brand_name,
+                            senior_label=m.senior_label,
+                            senior_label_te=m.senior_label_te or "",
+                            senior_label_hi=m.senior_label_hi or "",
+                            salt_composition=m.salt_composition or "",
+                            dosage=m.dosage,
+                            timing_anchor=m.timing_anchor,
+                            timing_relation=m.timing_relation or "after_food",
+                            criticality=m.criticality or "high",
+                            remaining_pills=m.remaining_pills or 0,
+                            daily_doses=m.daily_doses or 1,
+                            pill_color=m.pill_color or "#3B82F6",
+                            purpose=m.purpose or "",
+                            approval_status=m.approval_status or "approved",
+                            added_by=m.added_by or "elder"
+                        ) for m in demo_meds
+                    ]
+            return []
 
     def add_medication(self, med: Medication, phone: Optional[str] = None) -> Medication:
-        p_key = self._normalize_phone(phone)
-        if p_key not in self.medications:
-            self.medications[p_key] = {}
-        self.medications[p_key][med.id] = med
-        self.add_activity_log(p_key, med.added_by, "MEDICATION_ADDED", f"{med.senior_label} ({med.brand_name}) added [Status: {med.approval_status}].")
-        self._save_to_disk()
-        return med
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p:
+                self.get_or_create_patient(clean)
+                p = session.query(db_models.Patient).filter(db_models.Patient.phone == clean).first()
+            
+            db_med = session.query(db_models.Medication).filter(
+                db_models.Medication.id == med.id,
+                db_models.Medication.patient_id == p.id
+            ).first()
+
+            if not db_med:
+                db_med = db_models.Medication(
+                    id=med.id,
+                    patient_id=p.id,
+                    brand_name=med.brand_name,
+                    senior_label=med.senior_label,
+                    senior_label_te=med.senior_label_te,
+                    senior_label_hi=med.senior_label_hi,
+                    salt_composition=med.salt_composition,
+                    dosage=med.dosage,
+                    timing_anchor=med.timing_anchor,
+                    timing_relation=med.timing_relation,
+                    criticality=med.criticality,
+                    remaining_pills=med.remaining_pills,
+                    daily_doses=med.daily_doses,
+                    pill_color=med.pill_color,
+                    purpose=med.purpose,
+                    approval_status=med.approval_status,
+                    added_by=med.added_by
+                )
+                session.add(db_med)
+            else:
+                db_med.brand_name = med.brand_name
+                db_med.senior_label = med.senior_label
+                db_med.senior_label_te = med.senior_label_te
+                db_med.senior_label_hi = med.senior_label_hi
+                db_med.salt_composition = med.salt_composition
+                db_med.dosage = med.dosage
+                db_med.timing_anchor = med.timing_anchor
+                db_med.timing_relation = med.timing_relation
+                db_med.criticality = med.criticality
+                db_med.remaining_pills = med.remaining_pills
+                db_med.daily_doses = med.daily_doses
+                db_med.pill_color = med.pill_color
+                db_med.purpose = med.purpose
+                db_med.approval_status = med.approval_status
+                db_med.added_by = med.added_by
+
+            session.commit()
+            self.add_activity_log(clean, med.added_by, "MEDICATION_ADDED", f"{med.senior_label} ({med.brand_name}) added [Status: {med.approval_status}].")
+            return med
 
     def approve_medication(self, med_id: str, phone: Optional[str] = None) -> Optional[Medication]:
-        p_key = self._normalize_phone(phone)
-        meds = self.medications.get(p_key, {})
-        if med_id in meds:
-            meds[med_id].approval_status = "approved"
-            self.add_activity_log(p_key, "elder", "MEDICATION_APPROVED", f"Elder approved medication: {meds[med_id].senior_label}.")
-            self._save_to_disk()
-            return meds[med_id]
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if p:
+                db_med = session.query(db_models.Medication).filter(
+                    db_models.Medication.id == med_id,
+                    db_models.Medication.patient_id == p.id
+                ).first()
+                if db_med:
+                    db_med.approval_status = "approved"
+                    session.commit()
+                    self.add_activity_log(clean, "elder", "MEDICATION_APPROVED", f"Elder approved medication: {db_med.senior_label}.")
+                    return Medication(
+                        id=db_med.id,
+                        brand_name=db_med.brand_name,
+                        senior_label=db_med.senior_label,
+                        salt_composition=db_med.salt_composition or "",
+                        dosage=db_med.dosage,
+                        timing_anchor=db_med.timing_anchor,
+                        approval_status="approved",
+                        remaining_pills=db_med.remaining_pills
+                    )
         return None
 
     def reject_medication(self, med_id: str, phone: Optional[str] = None) -> bool:
-        p_key = self._normalize_phone(phone)
-        meds = self.medications.get(p_key, {})
-        if med_id in meds:
-            lbl = meds[med_id].senior_label
-            del meds[med_id]
-            self.add_activity_log(p_key, "elder", "MEDICATION_REJECTED", f"Elder declined medication proposal: {lbl}.")
-            self._save_to_disk()
-            return True
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if p:
+                db_med = session.query(db_models.Medication).filter(
+                    db_models.Medication.id == med_id,
+                    db_models.Medication.patient_id == p.id
+                ).first()
+                if db_med:
+                    lbl = db_med.senior_label
+                    session.delete(db_med)
+                    session.commit()
+                    self.add_activity_log(clean, "elder", "MEDICATION_REJECTED", f"Elder declined medication proposal: {lbl}.")
+                    return True
         return False
 
     def get_medication(self, med_id: str, phone: Optional[str] = None) -> Optional[Medication]:
-        p_key = self._normalize_phone(phone)
-        meds = self.medications.get(p_key, {})
-        if med_id in meds:
-            return meds[med_id]
-        return self.medications.get("9849012345", {}).get(med_id)
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            db_med = None
+            if p:
+                db_med = session.query(db_models.Medication).filter(
+                    db_models.Medication.id == med_id,
+                    db_models.Medication.patient_id == p.id
+                ).first()
+            if not db_med:
+                db_med = session.query(db_models.Medication).filter(db_models.Medication.id == med_id).first()
+            
+            if db_med:
+                return Medication(
+                    id=db_med.id,
+                    brand_name=db_med.brand_name,
+                    senior_label=db_med.senior_label,
+                    senior_label_te=db_med.senior_label_te or "",
+                    senior_label_hi=db_med.senior_label_hi or "",
+                    salt_composition=db_med.salt_composition or "",
+                    dosage=db_med.dosage,
+                    timing_anchor=db_med.timing_anchor,
+                    timing_relation=db_med.timing_relation or "after_food",
+                    criticality=db_med.criticality or "high",
+                    remaining_pills=db_med.remaining_pills or 0,
+                    daily_doses=db_med.daily_doses or 1,
+                    pill_color=db_med.pill_color or "#3B82F6",
+                    purpose=db_med.purpose or "",
+                    approval_status=db_med.approval_status or "approved",
+                    added_by=db_med.added_by or "elder"
+                )
+        return None
 
     def log_dose(self, med_id: str, status: str, notes: str = "", triage: str = "none", phone: Optional[str] = None) -> Optional[DoseLog]:
-        p_key = self._normalize_phone(phone)
-        patient = self.get_patient(p_key)
-        med = self.get_medication(med_id, p_key)
-        
-        med_name = med.brand_name if med else med_id
-        senior_lbl = med.senior_label if med else med_id
-        anchor = med.timing_anchor if med else "breakfast"
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p:
+                p = session.query(db_models.Patient).first()
+            
+            med = None
+            if p:
+                med = session.query(db_models.Medication).filter(
+                    db_models.Medication.id == med_id,
+                    db_models.Medication.patient_id == p.id
+                ).first()
+            if not med:
+                med = session.query(db_models.Medication).filter(db_models.Medication.id == med_id).first()
 
-        if med and status == "taken" and med.remaining_pills > 0:
-            med.remaining_pills -= 1
+            med_name = med.brand_name if med else med_id
+            senior_lbl = med.senior_label if med else med_id
+            anchor = med.timing_anchor if med else "breakfast"
 
-        new_log = DoseLog(
-            id=f"log_{int(datetime.now().timestamp()*1000)}",
-            medication_id=med_id,
-            medication_name=med_name,
-            senior_label=senior_lbl,
-            patient_id=patient.id,
-            timing_anchor=anchor,
-            status=status,
-            logged_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            feedback_notes=notes,
-            triage_action=triage
-        )
+            if med and status == "taken" and med.remaining_pills > 0:
+                med.remaining_pills -= 1
 
-        if p_key not in self.dose_logs:
-            self.dose_logs[p_key] = []
-        self.dose_logs[p_key].insert(0, new_log)
-        self.add_activity_log(p_key, "elder", f"DOSE_{status.upper()}", f"{senior_lbl} logged as {status}.")
-        self._save_to_disk()
-        return new_log
+            new_log = db_models.DoseLog(
+                id=f"log_{uuid.uuid4().hex}",
+                medication_id=med_id,
+                medication_name=med_name,
+                senior_label=senior_lbl,
+                patient_id=p.id if p else "p_ramesh_72",
+                timing_anchor=anchor,
+                status=status,
+                logged_at=datetime.now(),
+                feedback_notes=notes,
+                triage_action=triage
+            )
+            session.add(new_log)
+            session.commit()
+
+            if p:
+                self.add_activity_log(p.phone, "elder", f"DOSE_{status.upper()}", f"{senior_lbl} logged as {status}.")
+
+            return DoseLog(
+                id=new_log.id,
+                medication_id=med_id,
+                medication_name=med_name,
+                senior_label=senior_lbl,
+                patient_id=new_log.patient_id,
+                timing_anchor=anchor,
+                status=status,
+                logged_at=new_log.logged_at.strftime("%Y-%m-%d %H:%M:%S") if new_log.logged_at else None,
+                feedback_notes=notes,
+                triage_action=triage
+            )
 
     def get_today_logs(self, phone: Optional[str] = None) -> List[DoseLog]:
-        p_key = self._normalize_phone(phone)
-        return self.dose_logs.get(p_key, self.dose_logs.get(self.active_phone, []))
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p and settings.DEMO_MODE:
+                p = session.query(db_models.Patient).filter(db_models.Patient.phone == "9849012345").first()
+            if p:
+                logs = session.query(db_models.DoseLog).filter(
+                    db_models.DoseLog.patient_id == p.id
+                ).order_by(db_models.DoseLog.created_at.desc()).all()
+                return [
+                    DoseLog(
+                        id=l.id,
+                        medication_id=l.medication_id,
+                        medication_name=l.medication_name,
+                        senior_label=l.senior_label,
+                        patient_id=l.patient_id,
+                        timing_anchor=l.timing_anchor,
+                        status=l.status,
+                        logged_at=l.logged_at.strftime("%Y-%m-%d %H:%M:%S") if l.logged_at else None,
+                        feedback_notes=l.feedback_notes or "",
+                        triage_action=l.triage_action or "none"
+                    ) for l in logs
+                ]
+            return []
 
     # Appointments CRUD
     def add_appointment(self, appt: Appointment, phone: Optional[str] = None) -> Appointment:
-        pat = self.get_patient(phone)
-        pat.appointments.append(appt)
-        self.add_activity_log(pat.phone, "caretaker", "APPOINTMENT_SCHEDULED", f"Appointment with {appt.doctor_name} on {appt.date} at {appt.time}.")
-        self._save_to_disk()
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p:
+                p = session.query(db_models.Patient).first()
+            
+            db_appt = db_models.Appointment(
+                id=appt.id,
+                patient_id=p.id if p else "p_ramesh_72",
+                doctor_name=appt.doctor_name,
+                specialty=appt.specialty,
+                hospital=appt.hospital,
+                phone=appt.phone or "",
+                date=appt.date,
+                time=appt.time,
+                notes=appt.notes or "",
+                status=appt.status or "scheduled"
+            )
+            session.add(db_appt)
+            session.commit()
+            if p:
+                self.add_activity_log(p.phone, "caretaker", "APPOINTMENT_SCHEDULED", f"Appointment with {appt.doctor_name} on {appt.date} at {appt.time}.")
         return appt
 
     def get_appointments(self, phone: Optional[str] = None) -> List[Appointment]:
         pat = self.get_patient(phone)
-        return getattr(pat, 'appointments', [])
+        return pat.appointments
 
     def delete_appointment(self, appt_id: str, phone: Optional[str] = None) -> bool:
-        pat = self.get_patient(phone)
-        initial_len = len(pat.appointments)
-        pat.appointments = [a for a in pat.appointments if a.id != appt_id]
-        if len(pat.appointments) < initial_len:
-            self.add_activity_log(pat.phone, "caretaker", "APPOINTMENT_CANCELLED", f"Appointment {appt_id} cancelled.")
-            self._save_to_disk()
-            return True
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if p:
+                db_appt = session.query(db_models.Appointment).filter(
+                    db_models.Appointment.id == appt_id,
+                    db_models.Appointment.patient_id == p.id
+                ).first()
+                if db_appt:
+                    session.delete(db_appt)
+                    session.commit()
+                    self.add_activity_log(p.phone, "caretaker", "APPOINTMENT_CANCELLED", f"Appointment {appt_id} cancelled.")
+                    return True
         return False
 
     def add_alert(self, severity: str, title: str, message: str, recipient: str = "caregiver@example.com", phone: Optional[str] = None) -> AlertNotification:
-        p_key = self._normalize_phone(phone)
-        patient = self.get_patient(p_key)
-        alert = AlertNotification(
-            id=f"alt_{int(datetime.now().timestamp()*1000)}",
-            patient_id=patient.id,
-            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M"),
-            severity=severity,
-            title=title,
-            message=message,
-            recipient_email=recipient,
-            status="sent"
-        )
-        if p_key not in self.alerts:
-            self.alerts[p_key] = []
-        self.alerts[p_key].insert(0, alert)
-        self._save_to_disk()
-        return alert
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p:
+                p = session.query(db_models.Patient).first()
+            alert = db_models.Alert(
+                id=f"alt_{uuid.uuid4().hex}",
+                patient_id=p.id if p else "p_ramesh_72",
+                severity=severity,
+                title=title,
+                message=message,
+                recipient_email=recipient,
+                status="sent",
+                created_at=datetime.now()
+            )
+            session.add(alert)
+            session.commit()
+            return AlertNotification(
+                id=alert.id,
+                patient_id=alert.patient_id,
+                timestamp=alert.created_at.strftime("%Y-%m-%d %H:%M"),
+                severity=alert.severity,
+                title=alert.title,
+                message=alert.message,
+                recipient_email=alert.recipient_email,
+                status=alert.status
+            )
 
     def get_alerts(self, phone: Optional[str] = None) -> List[AlertNotification]:
-        p_key = self._normalize_phone(phone)
-        return self.alerts.get(p_key, self.alerts.get(self.active_phone, []))
+        clean = self._normalize_phone(phone)
+        with SessionLocal() as session:
+            p = session.query(db_models.Patient).filter(
+                (db_models.Patient.phone == clean) | (db_models.Patient.id == clean)
+            ).first()
+            if not p and settings.DEMO_MODE:
+                p = session.query(db_models.Patient).filter(db_models.Patient.phone == "9849012345").first()
+            if p:
+                alts = session.query(db_models.Alert).filter(
+                    db_models.Alert.patient_id == p.id
+                ).order_by(db_models.Alert.created_at.desc()).all()
+                return [
+                    AlertNotification(
+                        id=a.id,
+                        patient_id=a.patient_id,
+                        timestamp=a.created_at.strftime("%Y-%m-%d %H:%M"),
+                        severity=a.severity,
+                        title=a.title,
+                        message=a.message,
+                        recipient_email=a.recipient_email,
+                        status=a.status
+                    ) for a in alts
+                ]
+            return []
 
 db = MultiUserDB()
