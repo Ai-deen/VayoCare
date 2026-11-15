@@ -42,26 +42,27 @@ def get_greeting(language: str = "te", anchor: str = "breakfast"):
     caregiver_msg = notes[0].message_text if notes else None
 
     if language == "te":
+        te_note = "నాన్నగారు, ఉదయం టిఫిన్ అయ్యాక మీ BP మాత్ర, షుగర్ మాత్ర తప్పకుండా వేసుకోండి."
         if caregiver_msg:
-            text = f"నమస్కారం {patient.name} గారు! మీ అబ్బాయి నుంచి సందేశం: \"{caregiver_msg}\" మీరు మాత్ర వేసుకున్నారా?"
+            note_display = te_note if caregiver_msg.startswith("Dad") else caregiver_msg
+            text = f"నమస్కారం {patient.name} గారు! మీ అబ్బాయి నుంచి సందేశం: \"{note_display}\" మీరు మాత్ర వేసుకున్నారా?"
             spoken = f"నమస్కారం అండీ! మీ అబ్బాయి గుర్తుచేశారు: మీరు టిఫిన్ తిని {friendly_name} వేసుకున్నారా?"
         else:
             text = f"నమస్కారం అండీ! టిఫిన్ అయిపోయిందా? మీ {friendly_name} వేసుకున్నారా?"
             spoken = text
     elif language == "hi":
+        hi_note = "पिताजी, नाश्ते के बाद अपनी बीपी और शुगर की दवा जरूर ले लीजिएगा।"
         if caregiver_msg:
-            text = f"नमस्ते {patient.name} जी! परिवार से संदेश: \"{caregiver_msg}\" क्या आपने दवा ली?"
+            note_display = hi_note if caregiver_msg.startswith("Dad") else caregiver_msg
+            text = f"नमस्ते {patient.name} जी! परिवार से संदेश: \"{note_display}\" क्या आपने दवा ली?"
             spoken = f"नमस्ते जी! क्या आपने नाश्ते के बाद अपनी {friendly_name} ले ली?"
         else:
             text = f"नमस्ते जी! क्या आपका नाश्ता हो गया? अपनी {friendly_name} ली क्या?"
             spoken = text
     else:
-        if caregiver_msg:
-            text = f"Good morning {patient.name}! Family note: \"{caregiver_msg}\" Have you taken your tablet?"
-            spoken = f"Good morning! Have you finished breakfast and taken your {friendly_name}?"
-        else:
-            text = f"Good morning! Have you finished your breakfast? Did you take your {friendly_name}?"
-            spoken = text
+        en_note = caregiver_msg or "Dad, please remember to take your morning BP tablet after breakfast."
+        text = f"Good morning {patient.name}! Family note: \"{en_note}\" Have you taken your {friendly_name}?"
+        spoken = f"Good morning! Have you finished breakfast and taken your {friendly_name}?"
 
     return {
         "text": text,

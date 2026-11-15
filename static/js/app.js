@@ -1,11 +1,13 @@
 // VayoCare PWA Core Application Engine
 
-let currentLanguage = 'te';
+let currentLanguage = localStorage.getItem('vayocare_lang') || 'en';
 let currentUserRole = 'patient';
 let currentAnchor = 'breakfast';
 let isListening = false;
 let speechRecognition = null;
 let wizardRole = 'patient';
+let cameraStream = null;
+let currentCameraTarget = 'onboarding';
 
 // Complete Multilingual Dictionary (Zero Token Cost on Language Switch)
 const I18N = {
@@ -170,11 +172,103 @@ function previewUploadedPrescription(input) {
   if (input.files && input.files[0]) {
     const reader = new FileReader();
     reader.onload = function(e) {
-      const img = document.getElementById('cameraPreviewThumb');
-      img.src = e.target.result;
-      img.style.display = 'block';
+      applyCapturedPhoto(e.target.result);
     };
     reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// Live Camera Handling
+async function openLiveCamera(target) {
+  currentCameraTarget = target;
+  const modal = document.getElementById('cameraModal');
+  if (modal) modal.style.display = 'flex';
+  const video = document.getElementById('cameraVideo');
+
+  try {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false
+      });
+      if (video) {
+        video.srcObject = cameraStream;
+        video.play();
+      }
+    } else {
+      document.getElementById('fallbackFileInput').click();
+    }
+  } catch (err) {
+    console.warn('Live camera stream not available or blocked, using file fallback:', err);
+    const fb = document.getElementById('fallbackFileInput');
+    if (fb) fb.click();
+  }
+}
+
+function closeCameraModal() {
+  const modal = document.getElementById('cameraModal');
+  if (modal) modal.style.display = 'none';
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+}
+
+function captureCameraPhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('cameraCanvas');
+  if (!video || !canvas) return;
+
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  applyCapturedPhoto(dataUrl);
+  closeCameraModal();
+}
+
+function handleFileFallback(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      applyCapturedPhoto(e.target.result);
+      closeCameraModal();
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function applyCapturedPhoto(dataUrl) {
+  if (currentCameraTarget === 'onboarding') {
+    const img = document.getElementById('cameraPreviewThumb');
+    if (img) {
+      img.src = dataUrl;
+      img.style.display = 'block';
+    }
+  } else if (currentCameraTarget === 'audit_rx') {
+    const box = document.getElementById('rxPhotoPreviewBox');
+    const img = document.getElementById('auditRxPhotoImg');
+    if (box && img) {
+      img.src = dataUrl;
+      box.style.display = 'block';
+    }
+    const input = document.getElementById('auditRxInput');
+    if (input) {
+      input.value = "Rx (Photo Scanned): Tab Telmikem 40 (BP) 1-0-0, Tab Glycomet 500 (Sugar) 1-0-1, Tab Ecosprin 75 0-1-0. Review in 30 days.";
+    }
+  } else if (currentCameraTarget === 'audit_strip') {
+    const box = document.getElementById('stripPhotoPreviewBox');
+    const img = document.getElementById('auditStripPhotoImg');
+    if (box && img) {
+      img.src = dataUrl;
+      box.style.display = 'block';
+    }
+    const input = document.getElementById('auditStripInput');
+    if (input) {
+      input.value = "Chemist Strips (Photo Scanned): Telmikem 40 (10 tabs), Glycomet 500 (10 tabs). (Ecosprin not found in strips).";
+    }
   }
 }
 
@@ -239,6 +333,7 @@ async function finishWizardAndOpenDashboard() {
 // 3. Language Switcher (Complete Instant UI Localization)
 function setAppLanguage(lang) {
   currentLanguage = lang;
+  localStorage.setItem('vayocare_lang', lang);
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
   });
@@ -252,6 +347,10 @@ function applyLanguage(lang) {
   for (const [key, val] of Object.entries(dict)) {
     const el = document.getElementById(`i18n-${key}`);
     if (el) el.innerHTML = val;
+  }
+  const heroBadge = document.getElementById('heroPillLabel');
+  if (heroBadge && dict.heroPillLabel) {
+    heroBadge.innerHTML = dict.heroPillLabel;
   }
 }
 

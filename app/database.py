@@ -56,7 +56,7 @@ class InMemoryDB:
                 CaregiverVoiceNote(
                     id="vn_1",
                     caregiver_name="Suresh (Son)",
-                    message_text="నాన్నగారు, ఉదయం టిఫిన్ అయ్యాక మీ BP మాత్ర, షుగర్ మాత్ర తప్పకుండా వేసుకోండి.",
+                    message_text="Dad, please remember to take your morning BP and Sugar tablets after breakfast.",
                     created_at=datetime.now().strftime("%Y-%m-%d %H:%M"),
                     assigned_anchor="breakfast"
                 )
