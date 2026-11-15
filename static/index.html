@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2563EB">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>VayoCare - Smart Elderly Care Companion</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="icon" type="image/png" href="/static/icons/icon-192.png">
+  <style>
+    /* Role Selector Pills */
+    .role-bar {
+      display: flex;
+      background: #E2E8F0;
+      border-radius: 14px;
+      padding: 4px;
+      margin: 10px auto 16px;
+      max-width: 400px;
+    }
+    .role-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.2s;
+    }
+    .role-btn.active {
+      background: #FFFFFF;
+      color: #2563EB;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Simple Elder Home Screen */
+    .elder-clean-card {
+      background: white;
+      border: 3px solid #BFDBFE;
+      border-radius: 28px;
+      padding: 26px 20px;
+      text-align: center;
+      box-shadow: 0 10px 25px -5px rgba(37,99,235,0.12);
+      margin-bottom: 20px;
+    }
+    .pill-hero-badge {
+      display: inline-block;
+      background: #EFF6FF;
+      color: #1D4ED8;
+      border: 2px solid #93C5FD;
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 14px;
+    }
+    .elder-btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .elder-big-btn {
+      padding: 18px 12px;
+      border-radius: 20px;
+      border: none;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .elder-btn-yes {
+      background: #10B981;
+      color: white;
+      box-shadow: 0 6px 14px rgba(16,185,129,0.3);
+    }
+    .elder-btn-later {
+      background: #F1F5F9;
+      color: #334155;
+      border: 2px solid #CBD5E1;
+    }
+    /* 7-Day Day-by-Day Adherence Dashboard */
+    .weekly-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin: 16px 0;
+    }
+    .day-pill {
+      background: #F8FAFC;
+      border: 2px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 8px 2px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .day-pill.good {
+      background: #ECFDF5;
+      border-color: #10B981;
+      color: #065F46;
+    }
+    .day-pill.warning {
+      background: #FFFBEB;
+      border-color: #F59E0B;
+      color: #B45309;
+    }
+    .day-pill.today {
+      border: 2px solid #2563EB;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <div class="brand-logo" style="background: #2563EB;">V</div>
+      <div>
+        <h1 class="brand-title">VayoCare</h1>
+        <p class="brand-subtitle" id="i18n-brandSubtitle">వృద్ధుల ఆరోగ్య మిత్ర • Elder Companion</p>
+      </div>
+    </div>
+    <div class="lang-selector-group">
+      <button class="lang-btn active" data-lang="te" onclick="setAppLanguage('te')">తెలుగు</button>
+      <button class="lang-btn" data-lang="hi" onclick="setAppLanguage('hi')">हिंदी</button>
+      <button class="lang-btn" data-lang="en" onclick="setAppLanguage('en')">EN</button>
+    </div>
+  </header>
+
+  <!-- Role Switcher (Patient vs Caretaker) -->
+  <div class="container" style="padding-bottom: 0;">
+    <div class="role-bar">
+      <button class="role-btn active" id="btnRolePatient" onclick="switchUserRole('patient')">
+        🧓 <span id="i18n-rolePatient">Senior Mode (వృద్ధుల మోడ్)</span>
+      </button>
+      <button class="role-btn" id="btnRoleCaregiver" onclick="switchUserRole('caregiver')">
+        👨‍👩‍👧 <span id="i18n-roleCaregiver">Caregiver Hub (కేర్‌టేకర్‌)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- ==================== SENIOR PATIENT VIEW ==================== -->
+    <div id="patientViewSection">
+
+      <!-- Clean Elder Home: Zero Clutter, Ultra Simple -->
+      <section id="tab-home" class="tab-content active">
+        <!-- Elder Primary Card -->
+        <div class="elder-clean-card">
+          <div class="pill-hero-badge" id="heroPillLabel">
+            💊 BP మాత్ర (BP Tablet)
+          </div>
+          
+          <!-- AI Conversational Bubble -->
+          <div class="companion-bubble" id="companionSpeechBubble" style="font-size: 22px; text-align: center; border-left: none; background: #F0FDF4; color: #166534; border: 2px solid #BBF7D0;">
+            "నమస్కారం అండీ! టిఫిన్ అయిపోయిందా? మీ BP మాత్ర వేసుకున్నారా?"
+          </div>
+
+          <!-- Big Glowing Voice Mic Button -->
+          <div class="mic-wrapper" style="margin: 22px auto 14px;">
+            <button id="micBtn" class="btn-mic" onclick="toggleVoiceInput()" aria-label="Tap to speak">
+              🎙️
+            </button>
+            <p class="mic-hint" id="i18n-micHint" style="font-size: 18px; margin-top: 12px;">నొక్కి మాట్లాడండి (Tap to Speak)</p>
+            <span class="voice-status-pill" id="voiceStatusPill">Ready • Microphones Active</span>
+          </div>
+
+          <!-- Two Big Elder Action Buttons (Yes vs Later) -->
+          <div class="elder-btn-grid">
+            <button class="elder-big-btn elder-btn-yes" onclick="submitQuickVoice('వేసుకున్నాను, మాత్ర అయిపోయింది')">
+              <span style="font-size: 26px;">✅</span>
+              <span id="i18n-btnTaken">హా, వేసుకున్నాను<br><small style="font-size:12px; font-weight:600;">(Yes, Taken)</small></span>
+            </button>
+            <button class="elder-big-btn elder-btn-later" onclick="submitQuickVoice('తర్వాత వేసుకుంటాను')">
+              <span style="font-size: 26px;">⏰</span>
+              <span id="i18n-btnLater">తర్వాత వేసుకుంటా<br><small style="font-size:12px; font-weight:600;">(Take Later)</small></span>
+            </button>
+          </div>
+
+          <!-- Quick Elder Conversational Tests -->
+          <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-pill" onclick="submitQuickVoice('బయటకు వెళ్లి బట్టలు కొన్నాను, రాముని కలిశాను')" style="font-size: 13px;">
+              🛍️ <span id="i18n-chipOfftopic">బయటికి వెళ్లాను (Shopping Chat)</span>
+            </button>
+            <button class="btn-pill danger" onclick="submitQuickVoice('నాకు చాలా తలనొప్పిగా ఉంది, ఒళ్ళు బాలేదు')" style="font-size: 13px;">
+              ⚠️ <span id="i18n-chipSymptom">తలనొప్పిగా ఉంది (Unwell / Pain)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Today's Essential Tablets (Friendly Names Only) -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="font-size: 20px; font-weight: 800;" id="i18n-todayMedsHeading">ఈరోజు మాత్రలు (Today's Doses)</h3>
+          <span style="font-size: 14px; font-weight: 700; color: var(--primary);" id="doseCountBadge">2 Tablets</span>
+        </div>
+
+        <div id="medicationListContainer">
+          <!-- Rendered dynamically with senior-friendly names: BP Tablet, Sugar Tablet -->
+        </div>
+      </section>
+
+      <!-- Senior Routine Tab -->
+      <section id="tab-routine" class="tab-content">
+        <div class="card">
+          <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;" id="i18n-routineTitle">🗣️ మీ దినచర్య (Daily Routine)</h2>
+          <p style="font-size: 15px; color: var(--text-muted); margin-bottom: 14px;" id="i18n-routineDesc">
+            మీరు ఏ సమయంలో తింటారో చెబితే, AI దానికి తగినట్లుగా మాత్రల సమయాన్ని నిర్ణయిస్తుంది.
+          </p>
+
+          <div style="background: #F1F5F9; padding: 16px; border-radius: 16px; margin-bottom: 16px;">
+            <textarea id="voiceRoutineInput" rows="3" style="width: 100%; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-size: 15px; font-family: inherit;">ఉదయం 7:30 కి లేస్తాను, టిఫిన్ 9:00 కి తింటాను, మధ్యాహ్నం భోజనం 1:30 కి, రాత్రి భోజనం 8:30 కి తింటాను.</textarea>
+            <button class="btn-primary" onclick="parseVoiceRoutine()" id="i18n-btnSaveRoutine">
+              ⚡ దినచర్యను సేవ్‌ చేయండి (Save Routine)
+            </button>
+          </div>
+
+          <div id="routineAnchorsList"></div>
+        </div>
+      </section>
+
+      <!-- Emergency QR Pass Tab -->
+      <section id="tab-emergency" class="tab-content">
+        <div class="card" style="text-align: center;">
+          <span style="font-size: 34px;">🚨</span>
+          <h2 style="font-size: 22px; font-weight: 800; margin-top: 6px;" id="i18n-emergencyTitle">డాక్టర్ / ఎమర్జెన్సీ QR పాస్</h2>
+          <p style="font-size: 14px; color: var(--text-muted); margin: 6px 0 16px;" id="i18n-emergencyDesc">
+            ఏ ఫోన్ కెమెరాతోనైనా స్కాన్ చేస్తే వెంటనే మీ వివరాలు, ప్రస్తుత మాత్రల వివరాలు కనిపిస్తాయి. యాప్ డౌన్‌లోడ్ చేయనవసరం లేదు!
+          </p>
+
+          <div class="qr-image-wrapper">
+            <img id="emergencyQrImg" src="" alt="Emergency QR Code">
+          </div>
+
+          <p style="font-size: 14px; font-weight: 700; color: #64748B; margin-bottom: 10px;" id="i18n-qrAccessCodeLabel">
+            యాక్సెస్ పిన్ (Access PIN): <strong style="color: #1E3A8A; font-size: 18px;" id="rollingPinText">4321</strong>
+          </p>
+
+          <a id="doctorDirectLink" href="#" target="_blank" class="btn-primary" style="text-decoration: none;">
+            🩺 <span id="i18n-btnOpenDoctorView">డాక్టర్ వ్యూ తెరవండి (Open Doctor View)</span>
+          </a>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ==================== CAREGIVER VIEW ==================== -->
+    <div id="caregiverViewSection" style="display: none;">
+
+      <!-- Caregiver Dashboard & 7-Day Day-by-Day Tracker -->
+      <section id="tab-caretaker" class="tab-content active">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+              <h2 style="font-size: 22px; font-weight: 800;" id="i18n-cgHubTitle">కేర్‌టేకర్‌ డాష్‌బోర్డ్ (Caregiver Hub)</h2>
+              <p style="font-size: 13px; color: var(--text-muted);" id="cgLinkedPatientText">లింక్ అయిన రోగి: రమేష్ రావు (72 సం.)</p>
+            </div>
+            <span style="font-size: 28px;">👨‍⚕️</span>
+          </div>
+
+          <!-- Weekly Adherence Tracker (Day-by-Day 7 Days) -->
+          <h3 style="font-size: 16px; font-weight: 800; color: #1E293B;" id="i18n-weeklyTrackerHeading">
+            📅 గత 7 రోజుల ట్రాకర్ (7-Day Adherence)
+          </h3>
+          <div class="weekly-grid">
+            <div class="day-pill good">Mon<br>✅</div>
+            <div class="day-pill good">Tue<br>✅</div>
+            <div class="day-pill warning">Wed<br>⚠️</div>
+            <div class="day-pill good">Thu<br>✅</div>
+            <div class="day-pill good">Fri<br>✅</div>
+            <div class="day-pill good">Sat<br>✅</div>
+            <div class="day-pill today good">Sun<br>✅</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 16px;">
+            <span>వారపు రేటు (Weekly Adherence): <strong style="color: #10B981;">88%</strong></span>
+            <span>మిస్సయినవి: <strong>1</strong></span>
+          </div>
+
+          <!-- Refill Runway Notice -->
+          <div style="background: #FEF2F2; border-left: 5px solid #EF4444; padding: 12px 14px; border-radius: 12px; margin-bottom: 18px;">
+            <div style="font-weight: 800; color: #991B1B; font-size: 15px;">⚠️ రీఫిల్ అలర్ట్ (Refill Needed)</div>
+            <div style="font-size: 13px; color: #7F1D1D; margin-top: 2px;">
+              <strong>BP మాత్ర (Telmikem 40)</strong> ఇంకా 2 రోజులకు మాత్రమే ఉన్నాయి. మెడికల్ షాపు నుండి త్వరగా కొనండి.
+            </div>
+          </div>
+
+          <!-- Loving Voice Note to Senior -->
+          <div style="background: #F8FAFC; border: 2px solid #E2E8F0; border-radius: 16px; padding: 16px; margin-bottom: 18px;">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 6px;" id="i18n-voiceNoteTitle">
+              🎙️ రోగికి మీ వాయిస్ మెసేజ్ పంపండి (Personal Voice Reminder)
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;" id="i18n-voiceNoteDesc">
+              మీరు మాట్లాడే మాటలు ఉదయం పూట రోగికి వినిపిస్తాయి. రోబోట్ వాయిస్ కాకుండా మీ మాటలే వారికి ధైర్యాన్నిస్తాయి.
+            </p>
+            <input type="text" id="caregiverVoiceMsgInput" placeholder="ఉదా: నాన్నగారు, టిఫిన్ చేసి BP మాత్ర వేసుకోండి." style="width: 100%; border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; font-size: 14px; font-family: inherit;">
+            <button class="btn-primary" onclick="submitCaregiverVoiceNote()" style="margin-top: 10px;" id="i18n-btnSendVoiceNote">
+              💌 వాయిస్ మెసేజ్ పంపండి (Save Note)
+            </button>
+          </div>
+
+          <!-- Email Alert Dispatch -->
+          <button class="btn-secondary" onclick="simulateCaregiverAlert()" id="i18n-btnTestAlert">
+            📧 ఈమెయిల్ అలర్ట్ పరీక్షించండి (Test Caregiver Email)
+          </button>
+
+          <!-- Notification Feed -->
+          <h3 style="font-size: 17px; font-weight: 800; margin: 18px 0 10px;" id="i18n-notifFeedTitle">అలర్ట్ మరియు నోటిఫికేషన్లు (Alerts Log)</h3>
+          <div id="alertsLogFeed"></div>
+        </div>
+      </section>
+
+      <!-- Caregiver Prescription vs Strip AI Audit Tab -->
+      <section id="tab-audit" class="tab-content">
+        <div class="card">
+          <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 6px;" id="i18n-auditTitle">🔍 ప్రిస్క్రిప్షన్ vs స్ట్రిప్ AI ఆడిట్</h2>
+          <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 14px;" id="i18n-auditDesc">
+            డాక్టర్ రాసిన కాగితం మరియు కెమిస్ట్ ఇచ్చిన మందుల స్ట్రిప్స్ ఫోటో తీయండి. ఏవైనా మందులు మిస్సయ్యాయా అని AI వెంటనే చెబుతుంది.
+          </p>
+
+          <div style="background: #F1F5F9; padding: 14px; border-radius: 14px; margin-bottom: 14px;">
+            <label style="font-size: 13px; font-weight: 700; color: #334155; display: block; margin-bottom: 4px;">డాక్టర్ ప్రిస్క్రిప్షన్ (Doctor Prescription Text/OCR):</label>
+            <textarea id="auditRxInput" rows="2" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px; font-size: 13px;">Rx: Tab Telmikem 40 (BP) 1-0-0, Tab Glycomet 500 (Sugar) 1-0-1, Tab Ecosprin 75 0-1-0. Review in 30 days.</textarea>
+
+            <label style="font-size: 13px; font-weight: 700; color: #334155; display: block; margin: 10px 0 4px;">కెమిస్ట్ ఇచ్చిన మందులు (Purchased Strips):</label>
+            <textarea id="auditStripInput" rows="2" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px; font-size: 13px;">Chemist Strips: Telmikem 40 (10 tabs), Glycomet 500 (10 tabs). (Ecosprin not given).</textarea>
+          </div>
+
+          <button class="btn-primary" onclick="runPrescriptionAudit()" id="i18n-btnRunAudit">
+            ⚡ AI ఆడిట్ ప్రారంభించండి (Run AI Audit)
+          </button>
+
+          <div id="auditResultsSection" style="margin-top: 18px; display: none;">
+            <div id="discrepancyBox" style="background: #FEF2F2; border-left: 6px solid #EF4444; padding: 14px; border-radius: 12px; margin-bottom: 14px;">
+              <h4 style="color: #991B1B; font-weight: 800;">⚠️ లోపం గుర్తించబడింది! (Discrepancy)</h4>
+              <p id="discrepancyText" style="font-size: 14px; color: #7F1D1D; margin-top: 4px;"></p>
+            </div>
+
+            <h3 style="font-size: 17px; font-weight: 800; margin-bottom: 8px;" id="i18n-refillRunwayHeading">📦 రీఫిల్ రన్‌వే (Refill Runway)</h3>
+            <div class="runway-grid" id="refillRunwayList"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Mobile Navigation Bar -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchNavTab('home')">
+      <span class="nav-icon">🏠</span>
+      <span id="i18n-navHome">హోమ్</span>
+    </button>
+    <button class="nav-item" onclick="switchNavTab('routine')">
+      <span class="nav-icon">🗓️</span>
+      <span id="i18n-navRoutine">దినచర్య</span>
+    </button>
+    <button class="nav-item" onclick="switchNavTab('audit')">
+      <span class="nav-icon">🔍</span>
+      <span id="i18n-navAudit">ఆడిట్</span>
+    </button>
+    <button class="nav-item" onclick="switchNavTab('caretaker')">
+      <span class="nav-icon">👨‍👩‍👧</span>
+      <span id="i18n-navCaretaker">కేర్‌టేకర్‌</span>
+    </button>
+    <button class="nav-item" onclick="switchNavTab('emergency')">
+      <span class="nav-icon">🚨</span>
+      <span id="i18n-navEmergency">QR పాస్</span>
+    </button>
+  </nav>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
