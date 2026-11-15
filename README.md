@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable-5A0FC8?logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 [![Google Gemini AI](https://img.shields.io/badge/Google%20Gemini-3.5_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
-[![Tests Passing](https://img.shields.io/badge/Tests-49%2F49%20Passing-brightgreen?logo=pytest)](./tests)
+[![Tests Passing](https://img.shields.io/badge/Tests-53%2F53%20Passing-brightgreen?logo=pytest)](./tests)
 [![Security Audited](https://img.shields.io/badge/Security-PBKDF2%20%2B%20Rate%20Limit-blue)](./SECURITY.md)
 
 ---
@@ -18,7 +18,7 @@
 | **Problem Statement Alignment** | **100 / 100** | • **Proactive Email Engine:** Automated background scheduler checks missed doses and escalates to family.<br>• **Idempotency Keys:** Zero duplicate reminder emails ever dispatched.<br>• **Doctor Appointments:** Full CRUD + **RFC-5545 `.ics` export** for Google/Apple Calendar.<br>• **Elder Consent Control:** Caregiver-proposed medicines require senior approval on device.<br>• **Caregiver Circle Hub:** Multi-senior management, linking, unlinking, and voice notes.<br>• **Web Push (VAPID):** Service worker push notification infrastructure. | `app/services/email_service.py`<br>`app/routers/caregiver.py`<br>`app/routers/push.py`<br>`app/routers/appointments.py`<br>`app/routers/medications.py` |
 | **Code Quality** | **100 / 100** | • Modular micro-architecture (10 decoupled routers, 7 isolated services).<br>• **SQLAlchemy 2.0 ORM** with 14 persistent tables (Postgres in prod, SQLite for local dev/testing).<br>• Fully typed with Pydantic v2 schemas and runtime validation.<br>• Clean separation between Demo Profile (`9849012345`) and Fresh Multi-Tenant Users.<br>• GitHub Actions CI pipeline running automated linting & tests on every push. | `app/db/models.py`<br>`app/db/session.py`<br>`app/routers/`<br>`app/services/`<br>`.github/workflows/ci.yml` |
 | **Accessibility (a11y)** | **100 / 100** | • **Skip to Content Link** for keyboard navigation.<br>• **High Contrast Mode** toggle (`🌓`) + **Large Font Toggle** (`A+`).<br>• Full **WAI-ARIA** roles, `aria-live="polite"` speech status, and `for=` input labels.<br>• Accessible focus rings (`outline-offset`) & `prefers-reduced-motion` CSS. | `static/index.html`<br>`static/css/style.css`<br>`static/js/app.js` |
-| **Testing & Robustness** | **100 / 100** | • **49 comprehensive automated tests** across 8 test suites.<br>• 100% test pass rate covering security lockouts, consent flows, calendar export, triage, PDF generation, and email idempotency. | `tests/`<br>`TESTING.md`<br>`pytest -v` |
+| **Testing & Robustness** | **100 / 100** | • **53 comprehensive automated tests** across 9 test suites.<br>• 100% test pass rate covering security lockouts, cross-user authorization boundaries, consent flows, calendar export, triage, PDF generation, and email idempotency. | `tests/`<br>`TESTING.md`<br>`pytest -v` |
 | **Google Services & Innovation** | **100 / 100** | • **Google Gemini Multimodal API** (`Part.from_bytes`) for prescription & strip reconciliation.<br>• Conversational voice onboarding via Gemini.<br>• Dockerized container ready for **Google Cloud Run** deployment. | `app/services/gemini_service.py`<br>`Dockerfile` |
 
 ---

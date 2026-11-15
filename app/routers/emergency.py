@@ -1,6 +1,6 @@
 import io
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status, Depends
 from app.config import settings
 from app.database import db
 from app.models import EmergencyViewData
@@ -8,14 +8,19 @@ from app.services.qr_service import qr_service
 from app.db.session import SessionLocal
 from app.db import models as db_models
 
+from app.services.auth_service import get_current_user, require_current_user
+
 router = APIRouter(prefix="/api/emergency", tags=["Zero-App Emergency QR Pass & PDF"])
 
 def build_pin_data(request: Optional[Request] = None, patient_id: Optional[str] = None):
     target_id = patient_id
     if not target_id and settings.DEMO_MODE:
-        target_id = "9849012345"
+        target_id = "p_ramesh_72"
     
     patient = db.get_patient(target_id)
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient record not found.")
+
     pin = qr_service.generate_rolling_pin(patient.id)
     rem = qr_service.get_remaining_seconds()
 
@@ -37,8 +42,41 @@ def build_pin_data(request: Optional[Request] = None, patient_id: Optional[str] 
     }
 
 @router.get("/current-pin")
-def get_current_rolling_pin(request: Request, patient_id: Optional[str] = Query(None)):
-    return build_pin_data(request, patient_id=patient_id)
+def get_current_rolling_pin(
+    request: Request,
+    patient_id: Optional[str] = Query(None),
+    current_user: Optional[db_models.User] = Depends(get_current_user)
+):
+    """
+    Rolling PIN generator: Strictly requires login.
+    Unauthenticated access is denied to prevent exposing the PIN.
+    """
+    if not current_user and not (settings.DEMO_MODE and not patient_id):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please log in to view active emergency PIN."
+        )
+
+    # Determine patient id from auth context
+    target_id = patient_id
+    if current_user:
+        if current_user.role in ("patient", "elder"):
+            pat = db.get_patient(current_user.phone)
+            target_id = pat.id
+        elif current_user.role in ("caregiver", "caretaker", "family"):
+            if not target_id:
+                # linked patient
+                with SessionLocal() as session:
+                    link = session.query(db_models.CaregiverLink).filter(
+                        db_models.CaregiverLink.caregiver_user_id == current_user.id,
+                        db_models.CaregiverLink.status == "approved"
+                    ).first()
+                    if link and link.patient:
+                        target_id = link.patient.id
+                    else:
+                        raise HTTPException(status_code=403, detail="No linked patient found for caregiver.")
+
+    return build_pin_data(request, patient_id=target_id)
 
 @router.get("/doctor-view/{patient_id}", response_model=EmergencyViewData)
 def get_doctor_emergency_view(patient_id: str, pin: str = Query(..., description="Active 6-digit rolling PIN")):

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 import jwt
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Security, status, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
@@ -40,8 +40,7 @@ def get_current_user(
     db: Session = Depends(get_db)
 ) -> Optional[db_models.User]:
     """
-    Extracts authenticated User from Bearer token if present.
-    Returns None if token is missing or invalid (allows non-breaking optional auth for public endpoints).
+    Extracts authenticated User from Bearer token.
     """
     if not credentials:
         return None
@@ -56,18 +55,66 @@ def get_current_user(
 def require_current_user(
     current_user: Optional[db_models.User] = Depends(get_current_user)
 ) -> db_models.User:
+    """Enforces authentication: raises 401 if valid Bearer token is missing."""
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required. Please provide a valid Bearer token."
+            detail="Authentication required. Please provide a valid Bearer token in Authorization header."
         )
     return current_user
 
-def verify_caregiver_access(caregiver_user: db_models.User, patient_id: str, db: Session) -> bool:
-    """Verifies that the caregiver has an approved link to the patient."""
-    link = db.query(db_models.CaregiverLink).filter(
-        db_models.CaregiverLink.caregiver_user_id == caregiver_user.id,
-        db_models.CaregiverLink.patient_id == patient_id,
-        db_models.CaregiverLink.status == "approved"
-    ).first()
-    return link is not None
+def get_authenticated_patient(
+    patient_id: Optional[str] = Query(None),
+    current_user: db_models.User = Depends(require_current_user),
+    session: Session = Depends(get_db)
+) -> db_models.Patient:
+    """
+    Derives authenticated patient context:
+    - If user is Patient: returns own patient profile. Cross-access to other patient_id -> 403 Forbidden.
+    - If user is Caregiver: verifies approved CaregiverLink. Unlinked access -> 403 Forbidden.
+    """
+    if current_user.role in ("patient", "elder"):
+        pat = session.query(db_models.Patient).filter(db_models.Patient.user_id == current_user.id).first()
+        if not pat:
+            pat = session.query(db_models.Patient).filter(db_models.Patient.phone == current_user.phone).first()
+        if not pat:
+            raise HTTPException(status_code=404, detail="Patient profile not found for authenticated user.")
+        
+        # If caller tried to pass someone else's patient_id
+        if patient_id and patient_id != pat.id and patient_id != pat.phone:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied. Patients cannot access records belonging to other users."
+            )
+        return pat
+
+    elif current_user.role in ("caregiver", "caretaker", "family"):
+        if patient_id:
+            # Check link to requested patient
+            clean_pid = patient_id
+            link = session.query(db_models.CaregiverLink).join(db_models.Patient).filter(
+                db_models.CaregiverLink.caregiver_user_id == current_user.id,
+                ((db_models.Patient.id == clean_pid) | (db_models.Patient.phone == clean_pid)),
+                db_models.CaregiverLink.status == "approved"
+            ).first()
+
+            if not link:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied. You do not have an approved caregiver link to this patient."
+                )
+            return link.patient
+        else:
+            # First approved linked patient
+            link = session.query(db_models.CaregiverLink).filter(
+                db_models.CaregiverLink.caregiver_user_id == current_user.id,
+                db_models.CaregiverLink.status == "approved"
+            ).first()
+            if not link or not link.patient:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No linked senior patients found for this caregiver account."
+                )
+            return link.patient
+
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized role.")

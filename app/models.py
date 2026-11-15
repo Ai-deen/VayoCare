@@ -88,7 +88,7 @@ class Patient(BaseModel):
     age: int
     gender: str
     phone: str
-    passcode: str = "4321"
+    passcode: str = ""
     language_preference: str = "en"
     chronic_conditions: List[str] = []
     allergies: List[str] = []

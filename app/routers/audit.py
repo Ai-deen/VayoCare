@@ -1,13 +1,17 @@
 import os
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Depends
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from app.config import settings
 from app.models import PrescriptionAuditResponse, AuditDiscrepancy, RefillRunwayItem
 from app.services.audit_service import audit_service
 from app.services.storage_service import storage_service
 from app.services.gemini_service import gemini_service
+from app.services.auth_service import get_current_user, require_current_user
 from app.database import db
-from app.db.session import SessionLocal
+from app.db.session import SessionLocal, get_db
 from app.db import models as db_models
 
 router = APIRouter(prefix="/api/audit", tags=["Prescription vs Chemist Strip Audit"])
@@ -104,7 +108,7 @@ async def upload_dual_scans(
             
             prompt_header = (
                 "You are an expert Clinical Pharmacologist auditing prescription documents and medicine strips for an elder. "
-                "The patient is pseudonymised as 'Patient P' (Age 72). "
+                f"The patient is pseudonymised as 'Patient P' (Age {patient.age or 'Elderly'}). "
                 "Analyze the provided image(s) and accompanying notes. "
                 "Extract: "
                 "1. matched_medicines: list of {prescribed, purchased, salt, status} "
@@ -149,3 +153,46 @@ async def upload_dual_scans(
     st_text = strip_notes or (f"Medicine strips received ({strip_file.filename})" if strip_file else "")
 
     return audit_service.audit_prescription_and_strips(rx_text, st_text, patient_phone=patient.phone)
+
+@router.get("/file/{filename}")
+def get_uploaded_file(
+    filename: str,
+    current_user: db_models.User = Depends(require_current_user),
+    session: Session = Depends(get_db)
+):
+    """
+    Authenticated access to stored prescription & strip uploads.
+    Enforces that only the patient who owns the file or a verified linked caregiver can view it.
+    """
+    upload = session.query(db_models.Upload).filter(
+        (db_models.Upload.file_name == filename) |
+        (db_models.Upload.file_url.endswith(filename))
+    ).first()
+    
+    if not upload:
+        # Check if local file exists
+        local_path = os.path.join(settings.STORAGE_LOCAL_DIR, filename)
+        if not os.path.exists(local_path):
+            raise HTTPException(status_code=404, detail="File record not found.")
+        return FileResponse(local_path)
+
+    # Ownership check
+    if current_user.role in ("patient", "elder"):
+        pat = session.query(db_models.Patient).filter(db_models.Patient.user_id == current_user.id).first()
+        if not pat or pat.id != upload.patient_id:
+            raise HTTPException(status_code=403, detail="Access denied. You do not own this medical file.")
+    elif current_user.role in ("caregiver", "caretaker", "family"):
+        link = session.query(db_models.CaregiverLink).filter(
+            db_models.CaregiverLink.caregiver_user_id == current_user.id,
+            db_models.CaregiverLink.patient_id == upload.patient_id,
+            db_models.CaregiverLink.status == "approved"
+        ).first()
+        if not link:
+            raise HTTPException(status_code=403, detail="Access denied. No approved caregiver relationship to this file.")
+
+    local_path = os.path.join(settings.STORAGE_LOCAL_DIR, filename)
+    if not os.path.exists(local_path):
+        raise HTTPException(status_code=404, detail="Uploaded file missing on disk.")
+
+    return FileResponse(local_path, media_type=upload.mime_type)
+

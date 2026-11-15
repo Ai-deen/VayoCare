@@ -16,17 +16,15 @@ from app.services.security_service import security_service
 
 class MultiUserDB:
     def __init__(self):
-        # Initialize schema and seed demo data
+        # Initialize schema and seed demo data only when DEMO_MODE is true
         init_db()
         with SessionLocal() as session:
             seed_demo_data(session)
-        self.active_phone: str = "9849012345"
 
     def _normalize_phone(self, phone: Any) -> str:
         if not phone or not isinstance(phone, str):
-            return self.active_phone
-        clean = "".join(c for c in phone if c.isdigit())
-        return clean or self.active_phone
+            return ""
+        return "".join(c for c in phone if c.isdigit())
 
     def _convert_db_patient_to_pydantic(self, p: db_models.Patient, session) -> Patient:
         # Load caregivers via caregiver_links
@@ -174,7 +172,7 @@ class MultiUserDB:
                     phone=clean,
                     name=name or "Senior Patient",
                     role=role,
-                    hashed_passcode=security_service.hash_passcode("1234")
+                    hashed_passcode=security_service.hash_passcode(uuid.uuid4().hex[:10])
                 )
                 session.add(user)
                 session.flush()

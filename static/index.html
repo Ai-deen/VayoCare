@@ -14,19 +14,19 @@
       overflow-y: auto; padding: 20px 16px; display: none;
     }
     .login-card {
-      max-width: 460px; margin: 30px auto; background: white;
+      max-width: 480px; margin: 20px auto; background: white;
       border: 2px solid #E2E8F0; border-radius: 24px; padding: 26px 20px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.06); text-align: center;
     }
-    .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
     .role-card {
-      border: 2px solid #E2E8F0; border-radius: 16px; padding: 14px 10px;
+      border: 2px solid #E2E8F0; border-radius: 16px; padding: 12px 10px;
       cursor: pointer; transition: all 0.2s;
     }
     .role-card.selected {
       border-color: #2563EB; background: #EFF6FF; box-shadow: 0 4px 12px rgba(37,99,235,0.15);
     }
-    .input-box { width: 100%; border: 2px solid #CBD5E1; border-radius: 12px; padding: 12px 14px; font-size: 16px; margin-bottom: 12px; box-sizing: border-box; }
+    .input-box { width: 100%; border: 2px solid #CBD5E1; border-radius: 12px; padding: 11px 14px; font-size: 15px; margin-bottom: 12px; box-sizing: border-box; }
     .camera-modal {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 2000;
       flex-direction: column; align-items: center; justify-content: center; padding: 16px;
@@ -38,92 +38,125 @@
     }
     .hero-badge {
       display: inline-block; background: #EFF6FF; color: #1D4ED8; border: 2px solid #93C5FD;
-      padding: 6px 16px; border-radius: 20px; font-size: 17px; font-weight: 800; margin-bottom: 12px;
+      padding: 6px 16px; border-radius: 20px; font-size: 16px; font-weight: 800; margin-bottom: 12px;
     }
     .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
     .action-btn {
-      padding: 16px 10px; border-radius: 16px; border: none; font-size: 17px; font-weight: 800;
+      padding: 16px 10px; border-radius: 16px; border: none; font-size: 16px; font-weight: 800;
       cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
     }
     .btn-yes { background: #10B981; color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
     .btn-no { background: #F1F5F9; color: #334155; border: 2px solid #CBD5E1; }
     .user-tag { background: #EFF6FF; color: #1E40AF; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; }
+    .onboarding-chat-box { max-height: 280px; overflow-y: auto; text-align: left; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+    .chat-bubble-agent { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A8A; padding: 10px 14px; border-radius: 14px; margin-bottom: 10px; font-size: 14px; line-height: 1.4; }
+    .chat-bubble-user { background: #10B981; color: white; padding: 10px 14px; border-radius: 14px; margin-bottom: 10px; font-size: 14px; line-height: 1.4; margin-left: 20%; text-align: right; }
+    .tab-nav { display: flex; background: white; border-top: 1px solid #E2E8F0; position: fixed; bottom: 0; left: 0; right: 0; z-index: 900; justify-content: space-around; padding: 6px 0; }
+    .tab-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 700; color: #64748B; cursor: pointer; padding: 4px 8px; }
+    .tab-btn.active { color: #2563EB; }
+    .card-box { background: white; border: 1px solid #E2E8F0; border-radius: 20px; padding: 18px 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
   </style>
 </head>
 <body>
 
-  <!-- Accessible Skip Link for Keyboard Navigation -->
+  <!-- Accessible Skip Link -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- ==================== LOGIN / ONBOARDING SCREEN ==================== -->
+  <!-- ==================== AUTH & REGISTRATION SCREEN ==================== -->
   <div id="loginOverlay" class="login-overlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
     <div class="login-card">
       <div style="width: 52px; height: 52px; border-radius: 16px; background: #2563EB; color: white; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; margin: 0 auto 12px;">V</div>
-      <h2 id="loginTitle" style="font-size: 22px; font-weight: 900;">Welcome to VayoCare</h2>
-      <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">Routine-Anchored Elder Medication Companion</p>
+      <h2 id="loginTitle" style="font-size: 22px; font-weight: 900; margin-bottom: 4px;">Welcome to VayoCare</h2>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 16px;">Routine-Anchored Elder Medication Companion & Safety</p>
 
-      <label for="authPhone" style="display: block; text-align: left; margin-bottom: 4px; font-weight: 700; font-size: 13px;">Your Phone Number (ఫోన్ నంబర్):</label>
-      <input type="tel" id="authPhone" class="input-box" placeholder="e.g. 9849012345" aria-required="true">
+      <!-- Auth Mode Switcher -->
+      <div style="display: flex; background: #F1F5F9; border-radius: 12px; padding: 4px; margin-bottom: 16px;">
+        <button id="authTabLogin" onclick="setAuthMode('login')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: 800; font-size: 13px; background: white; color: #1E293B; cursor: pointer;">Sign In</button>
+        <button id="authTabRegister" onclick="setAuthMode('register')" style="flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: 800; font-size: 13px; background: none; color: #64748B; cursor: pointer;">Create Account</button>
+      </div>
 
-      <label for="authName" style="display: block; text-align: left; margin-bottom: 4px; font-weight: 700; font-size: 13px;">Your Name (మీ పేరు):</label>
-      <input type="text" id="authName" class="input-box" placeholder="e.g. Ramesh Rao">
-
-      <div style="text-align: left; margin-bottom: 6px; font-weight: 700; font-size: 13px;">Select Your Role:</div>
+      <!-- Role Selection -->
+      <div style="text-align: left; margin-bottom: 4px; font-weight: 700; font-size: 12px; color: #475569;">Select Role:</div>
       <div class="role-grid" role="radiogroup" aria-label="Role Selection">
         <div id="roleSelectPatient" class="role-card selected" onclick="selectRole('patient')" role="radio" aria-checked="true" tabindex="0">
-          <span style="font-size: 30px;" aria-hidden="true">🧓</span>
-          <div style="font-weight: 800; font-size: 14px; margin-top: 4px;">Senior (Patient)</div>
-          <div style="font-size: 11px; color: #64748B;">వృద్ధులు</div>
+          <span style="font-size: 26px;" aria-hidden="true">🧓</span>
+          <div style="font-weight: 800; font-size: 13px; margin-top: 2px;">Senior (Patient)</div>
+          <div style="font-size: 11px; color: #64748B;">For Elders</div>
         </div>
         <div id="roleSelectCaregiver" class="role-card" onclick="selectRole('caregiver')" role="radio" aria-checked="false" tabindex="0">
-          <span style="font-size: 30px;" aria-hidden="true">👨‍👩‍👧</span>
-          <div style="font-weight: 800; font-size: 14px; margin-top: 4px;">Caregiver</div>
-          <div style="font-size: 11px; color: #64748B;">కుటుంబ సభ్యుడు</div>
+          <span style="font-size: 26px;" aria-hidden="true">👨‍👩‍👧</span>
+          <div style="font-weight: 800; font-size: 13px; margin-top: 2px;">Caregiver</div>
+          <div style="font-size: 11px; color: #64748B;">Family & Carer</div>
         </div>
       </div>
 
-      <!-- Caregiver Parent Linking -->
-      <div id="caregiverLinkBox" style="display: none; background: #F1F5F9; padding: 12px; border-radius: 12px; margin-bottom: 14px; text-align: left;">
-        <label for="authParentPhone" style="font-size: 12px; font-weight: 800; color: #334155;">Senior Parent's Phone Number (తల్లి/తండ్రి ఫోన్ నంబర్):</label>
-        <input type="tel" id="authParentPhone" class="input-box" placeholder="e.g. 9849012345" style="margin-top: 4px; margin-bottom: 0;">
+      <!-- Form Inputs -->
+      <div style="text-align: left;">
+        <label for="authPhone" style="display: block; margin-bottom: 4px; font-weight: 700; font-size: 12px; color: #334155;">Phone Number (Required):</label>
+        <input type="tel" id="authPhone" class="input-box" placeholder="e.g. 9849012345" required>
+
+        <label for="authName" style="display: block; margin-bottom: 4px; font-weight: 700; font-size: 12px; color: #334155;">Full Name (Required):</label>
+        <input type="text" id="authName" class="input-box" placeholder="e.g. Ramesh Rao" required>
+
+        <div id="registerFields" style="display: none;">
+          <div id="patientRegisterFields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label for="authAge" style="display: block; margin-bottom: 4px; font-weight: 700; font-size: 12px; color: #334155;">Age:</label>
+              <input type="number" id="authAge" class="input-box" placeholder="e.g. 72">
+            </div>
+            <div>
+              <label for="authGender" style="display: block; margin-bottom: 4px; font-weight: 700; font-size: 12px; color: #334155;">Gender:</label>
+              <select id="authGender" class="input-box">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="caregiverRegisterFields" style="display: none;">
+            <label for="authEmail" style="display: block; margin-bottom: 4px; font-weight: 700; font-size: 12px; color: #334155;">Email (Required for Caregivers):</label>
+            <input type="email" id="authEmail" class="input-box" placeholder="e.g. caregiver@family.com">
+          </div>
+        </div>
+
+        <label for="authPasscode" style="display: block; margin-bottom: 4px; font-weight: 700; font-size: 12px; color: #334155;">4-Digit Passcode / PIN:</label>
+        <input type="password" id="authPasscode" class="input-box" placeholder="••••" maxlength="6" required>
       </div>
 
-      <button class="btn-primary" onclick="handleAuthSubmit()" style="width: 100%; padding: 14px; font-size: 16px;">
-        🚀 Continue to Dashboard
+      <button id="authSubmitBtn" class="btn-primary" onclick="handleAuthSubmit()" style="width: 100%; padding: 13px; font-size: 15px; margin-top: 6px;">
+        🚀 Sign In
       </button>
 
-      <div style="margin: 16px 0 8px; color: #94A3B8; font-size: 12px; font-weight: 700;">OR TEST WITH PRE-CONFIGURED DATA</div>
-
-      <button class="btn-secondary" onclick="loginDemoProfile()" style="width: 100%; padding: 12px; font-size: 14px;">
-        ⚡ Load Ramesh Rao Demo Profile (Age 72)
-      </button>
+      <!-- Demo Account Quick Loader -->
+      <div id="demoOptionDiv" style="margin-top: 14px; border-top: 1px dashed #CBD5E1; padding-top: 12px;">
+        <button class="btn-secondary" onclick="loginDemoProfile()" style="width: 100%; padding: 10px; font-size: 13px;">
+          ⚡ Try Pre-Configured Demo (Ramesh Rao, Age 72)
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- ==================== CAMERA MODAL ==================== -->
-  <div id="cameraModal" class="camera-modal" role="dialog" aria-modal="true" aria-label="Camera Viewfinder">
+  <!-- ==================== CAMERA / OCR MODAL ==================== -->
+  <div id="cameraModal" class="camera-modal" role="dialog" aria-modal="true" aria-label="Camera Capture">
     <div class="camera-box">
       <div style="padding: 12px 16px; background: #1E293B; color: white; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-weight: 800; font-size: 15px;">📸 Camera Viewfinder</span>
+        <span style="font-weight: 800; font-size: 14px;">📸 Prescription / Strip Scanner</span>
         <button onclick="closeCameraModal()" aria-label="Close Camera" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
       </div>
-      <div style="position: relative; background: #000; min-height: 260px; max-height: 340px; display: flex; align-items: center; justify-content: center;">
-        <video id="cameraVideo" autoplay playsinline style="width: 100%; max-height: 340px; object-fit: cover;"></video>
+      <div style="position: relative; background: #000; min-height: 260px; max-height: 320px; display: flex; align-items: center; justify-content: center;">
+        <video id="cameraVideo" autoplay playsinline style="width: 100%; max-height: 320px; object-fit: cover;"></video>
         <canvas id="cameraCanvas" style="display: none;"></canvas>
       </div>
-      <div style="padding: 14px; display: flex; gap: 10px; background: #F8FAFC;">
-        <button onclick="captureCameraPhoto()" class="btn-primary" style="flex: 2; padding: 12px; font-size: 15px;">
-          📸 Click Photo
-        </button>
-        <label for="fallbackFileInput" class="btn-secondary" style="flex: 1; padding: 12px; font-size: 13px; text-align: center; cursor: pointer; margin: 0;">
-          📁 Gallery
-        </label>
+      <div style="padding: 12px; display: flex; gap: 8px; background: #F8FAFC;">
+        <button onclick="captureCameraPhoto()" class="btn-primary" style="flex: 2; padding: 11px; font-size: 14px;">📸 Snap Photo</button>
+        <label for="fallbackFileInput" class="btn-secondary" style="flex: 1; padding: 11px; font-size: 13px; text-align: center; cursor: pointer; margin: 0;">📁 Gallery</label>
         <input type="file" id="fallbackFileInput" accept="image/*" style="display: none;" onchange="handleFileFallback(this)">
       </div>
     </div>
   </div>
 
-  <!-- ==================== MAIN HEADER ==================== -->
+  <!-- ==================== HEADER ==================== -->
   <header class="app-header">
     <div class="brand-wrapper">
       <div class="brand-logo" aria-hidden="true">V</div>
@@ -133,10 +166,9 @@
       </div>
     </div>
     <div style="display: flex; align-items: center; gap: 6px;">
-      <!-- Accessibility Toggles -->
       <button onclick="toggleLargeText()" aria-label="Toggle larger font size" class="btn-pill" style="font-size: 12px; font-weight: 800; padding: 5px 8px;">A+</button>
       <button onclick="toggleHighContrast()" aria-label="Toggle high contrast accessibility mode" class="btn-pill" style="font-size: 12px; font-weight: 800; padding: 5px 8px;">🌓</button>
-      <button onclick="logoutUser()" class="btn-pill" style="font-size: 11px; padding: 5px 8px; background: #F1F5F9; border: 1px solid #CBD5E1;">Switch User</button>
+      <button onclick="logoutUser()" class="btn-pill" style="font-size: 11px; padding: 5px 8px; background: #F1F5F9; border: 1px solid #CBD5E1;">Log Out</button>
       <div class="lang-selector-group" role="group" aria-label="Language Selector">
         <button class="lang-btn active" data-lang="en" onclick="setAppLanguage('en')" aria-label="Switch to English">EN</button>
         <button class="lang-btn" data-lang="hi" onclick="setAppLanguage('hi')" aria-label="Switch to Hindi">हिंदी</button>
@@ -145,290 +177,239 @@
     </div>
   </header>
 
-  <main class="container" id="main-content">
+  <main class="container" id="main-content" style="padding-bottom: 70px;">
 
-    <!-- ==================== 1. SENIOR VIEW ONLY ==================== -->
+    <!-- ==================== CONVERSATIONAL ONBOARDING VIEW ==================== -->
+    <div id="seniorOnboardingView" style="display: none;">
+      <div class="card-box" style="border: 2px solid #3B82F6;">
+        <h2 style="font-size: 18px; font-weight: 900; color: #1D4ED8; margin-bottom: 6px;">🎙️ Health Circle Onboarding</h2>
+        <p style="font-size: 13px; color: #475569; margin-bottom: 12px;">Speak or type your daily routine. We will set up your personalized reminders in under 1 minute.</p>
+        
+        <div id="onboardingChatLog" class="onboarding-chat-box"></div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="text" id="onboardingInputText" class="input-box" placeholder="Speak or type your answer..." style="margin-bottom: 0; flex: 1;">
+          <button id="onboardingMicBtn" class="btn-pill" onclick="toggleOnboardingVoice()" style="padding: 11px 14px; font-size: 18px; background: #EFF6FF; border: 2px solid #93C5FD;">🎙️</button>
+          <button class="btn-primary" onclick="sendOnboardingStep()" style="padding: 11px 16px; font-size: 14px;">Send</button>
+        </div>
+
+        <div id="onboardingPhotoPrompt" style="display: none; margin-top: 16px; background: #EFF6FF; border: 1px dashed #3B82F6; border-radius: 14px; padding: 14px; text-align: center;">
+          <h4 style="font-size: 14px; font-weight: 800; color: #1E40AF; margin-bottom: 4px;">📸 Optional: Add Prescription or Tablet Strip Photos</h4>
+          <p style="font-size: 12px; color: #3B82F6; margin-bottom: 10px;">Our AI verifies chemical salts and checks for missing medicines.</p>
+          <div style="display: flex; gap: 8px; justify-content: center;">
+            <button class="btn-primary" onclick="openCameraModal('onboarding')" style="padding: 8px 14px; font-size: 13px;">📸 Snap / Upload Photo</button>
+            <button class="btn-secondary" onclick="finishOnboardingDirectly()" style="padding: 8px 14px; font-size: 13px;">Skip to Dashboard</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 1. SENIOR VIEW (5 TABS) ==================== -->
     <div id="seniorSection">
       
       <!-- Pending Elder Approvals Banner -->
       <div id="elderConsentBanner" style="display: none; background: #FFFBEB; border: 2px solid #F59E0B; border-radius: 16px; padding: 14px; margin-bottom: 16px;">
-        <h4 style="color: #B45309; font-weight: 800; font-size: 15px; margin-bottom: 4px;">⚠️ Pending Medication Approval</h4>
-        <p style="font-size: 13px; color: #92400E; margin-bottom: 8px;">Your caregiver proposed a new medication. Do you approve adding it to your schedule?</p>
+        <h4 style="color: #B45309; font-weight: 800; font-size: 14px; margin-bottom: 4px;">⚠️ Caregiver Proposed a New Medicine</h4>
+        <p style="font-size: 12px; color: #92400E; margin-bottom: 8px;">Do you approve adding this medication to your scheduled routine?</p>
         <div id="pendingMedsList"></div>
       </div>
 
-      <!-- Tab 1: Home (Clean time-anchored companion) -->
-      <section id="senior-home" class="tab-content active" aria-label="Senior Home Dashboard">
+      <!-- Tab 1: Today (Companion Check-in) -->
+      <section id="senior-today" class="tab-content active" aria-label="Senior Today View">
         <div class="elder-card">
-          <div class="hero-badge" id="heroPillLabel">
-            💊 Afternoon Medicine
-          </div>
+          <div class="hero-badge" id="heroPillLabel">💊 Daily Medicine Check-in</div>
           
-          <div class="companion-bubble" id="companionSpeechBubble" role="status" aria-live="polite" style="font-size: 18px; line-height: 1.5; text-align: center; border-left: none; background: #F0FDF4; color: #166534; border: 2px solid #BBF7D0; padding: 16px;">
-            "Good afternoon Ramesh Rao! Have you finished your lunch? Did you take your medicine?"
+          <div class="companion-bubble" id="companionSpeechBubble" role="status" aria-live="polite" style="font-size: 17px; line-height: 1.5; text-align: center; border-left: none; background: #F0FDF4; color: #166534; border: 2px solid #BBF7D0; padding: 16px; border-radius: 18px;">
+            "Have you finished your meal? Did you take your scheduled medicine?"
           </div>
 
           <div class="mic-wrapper" style="margin: 16px auto 10px;">
             <button id="micBtn" class="btn-mic" onclick="toggleVoiceInput()" aria-label="Tap to speak into microphone">🎙️</button>
-            <p class="mic-hint" id="i18n-micHint" style="font-size: 16px; margin-top: 8px;">Tap to Speak to Companion</p>
-            <span class="voice-status-pill" id="voiceStatusPill" role="status" aria-live="polite">Ready • Microphones Active</span>
+            <p class="mic-hint" id="i18n-micHint" style="font-size: 15px; margin-top: 6px;">Tap to Speak to Companion</p>
+            <span class="voice-status-pill" id="voiceStatusPill" role="status" aria-live="polite">Ready • Microphone Active</span>
           </div>
 
           <div class="action-grid">
             <button class="action-btn btn-yes" onclick="submitQuickDose('taken')" aria-label="Confirm dose taken">
-              <span style="font-size: 24px;" aria-hidden="true">✅</span>
+              <span style="font-size: 22px;" aria-hidden="true">✅</span>
               <span id="i18n-btnTaken">Yes, Taken<br><small style="font-size:11px; font-weight:600;">(Confirmed)</small></span>
             </button>
-            <button class="action-btn btn-no" onclick="submitQuickDose('skipped')" aria-label="Delay or skip dose">
-              <span style="font-size: 24px;" aria-hidden="true">⏰</span>
+            <button class="action-btn btn-no" onclick="submitQuickDose('skipped')" aria-label="Postpone or skip dose">
+              <span style="font-size: 22px;" aria-hidden="true">⏰</span>
               <span id="i18n-btnLater">Take Later<br><small style="font-size:11px; font-weight:600;">(Remind Soon)</small></span>
             </button>
           </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <h3 style="font-size: 18px; font-weight: 800;" id="i18n-todayMedsHeading">Today's Essential Medicines</h3>
-          <span class="user-tag" id="doseCountBadge">Active Doses</span>
+        <div class="section-header" style="margin-top: 18px;">
+          <h2 class="section-title" id="i18n-todayMedsHeading">Today's Essential Medicines</h2>
         </div>
-        <div id="seniorMedList" role="region" aria-label="Daily Medication List"></div>
+        <div id="medicationsList" class="med-list-container" role="feed" aria-label="Active Medicines Feed"></div>
       </section>
 
-      <!-- Tab 2: Senior Routine (Speak or View) -->
-      <section id="senior-routine" class="tab-content" aria-label="Daily Routine">
-        <div class="card">
-          <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 6px;">🗣️ Daily Meal Routine</h2>
-          <p style="font-size: 13px; color: #64748B; margin-bottom: 14px;">
-            Speak your meal routine. Your medicines will anchor around these meal times:
-          </p>
+      <!-- Tab 2: Medicines Inventory -->
+      <section id="senior-medicines" class="tab-content" aria-label="Senior Medicines Inventory" style="display: none;">
+        <div class="card-box">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h2 style="font-size: 17px; font-weight: 800;">💊 Your Medication Inventory</h2>
+            <button class="btn-primary" onclick="openCameraModal('rx_audit')" style="padding: 7px 12px; font-size: 12px;">📸 Scan New Rx</button>
+          </div>
+          <div id="fullMedicinesList"></div>
+        </div>
+      </section>
 
-          <div style="background: #F1F5F9; padding: 14px; border-radius: 14px; margin-bottom: 14px;">
-            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-              <button class="btn-primary" onclick="startRoutineVoiceInput()" aria-label="Speak your daily meal schedule" style="flex: 1; padding: 10px; font-size: 14px;">
-                🎙️ Speak Daily Routine
-              </button>
+      <!-- Tab 3: History & Adherence Stats -->
+      <section id="senior-history" class="tab-content" aria-label="Senior History & Stats" style="display: none;">
+        <div class="card-box">
+          <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 12px;">📊 Medication Adherence & Routine Consistency</h2>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+            <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 14px; padding: 14px; text-align: center;">
+              <div style="font-size: 28px; font-weight: 900; color: #1D4ED8;" id="seniorAdherenceRate">--%</div>
+              <div style="font-size: 12px; color: #1E40AF; font-weight: 700;">7-Day Adherence</div>
             </div>
-            <label for="voiceRoutineInput" style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Transcript / Edit Routine:</label>
-            <textarea id="voiceRoutineInput" rows="2" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px; font-size: 14px;">I wake up at 7:30, eat breakfast at 9:00, lunch at 1:30, and dinner at 8:30.</textarea>
-            <button class="btn-secondary" onclick="parseVoiceRoutine()" style="margin-top: 8px; width: 100%; padding: 10px; font-size: 14px;">
-              ⚡ Save Routine
-            </button>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 14px; padding: 14px; text-align: center;">
+              <div style="font-size: 28px; font-weight: 900; color: #15803D;" id="seniorStreakDays">7</div>
+              <div style="font-size: 12px; color: #166534; font-weight: 700;">Day Streak 🔥</div>
+            </div>
           </div>
-          <div id="routineAnchorsList"></div>
+          <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 8px;">Dose History Logs:</h3>
+          <div id="seniorDoseHistoryList"></div>
         </div>
       </section>
 
-      <!-- Tab 3: Emergency QR Pass -->
-      <section id="senior-emergency" class="tab-content" aria-label="Emergency Doctor Pass">
-        <div class="card" style="text-align: center;">
-          <span style="font-size: 32px;" aria-hidden="true">🚨</span>
-          <h2 style="font-size: 20px; font-weight: 800; margin-top: 4px;">Zero-App Emergency QR Pass</h2>
-          <p style="font-size: 13px; color: #64748B; margin: 6px 0 14px;">
-            Show this QR to any doctor or paramedic. Scanning it opens your medical emergency brief directly in their browser — no app install needed!
-          </p>
+      <!-- Tab 4: Profile & Caregivers -->
+      <section id="senior-profile" class="tab-content" aria-label="Senior Profile & Caregiver Links" style="display: none;">
+        <div class="card-box">
+          <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 12px;">👤 Patient Health Profile</h2>
+          <div id="patientProfileCard" style="background: #F8FAFC; border-radius: 14px; padding: 14px; margin-bottom: 16px;"></div>
 
-          <div class="qr-image-wrapper">
-            <img id="emergencyQrImg" src="" alt="High contrast scannable QR code for doctor medical access" style="max-width: 220px; margin: 0 auto; display: block;">
-          </div>
-
-          <a id="doctorDirectLink" href="/emergency/p_ramesh_72" target="_blank" class="btn-primary" style="text-decoration: none; margin-top: 14px; display: block; padding: 14px;">
-            🩺 Open Doctor View (Print/PDF)
-          </a>
+          <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 8px;">👨‍👩‍👧 Linked Caregivers & Family:</h3>
+          <div id="seniorCaregiversList"></div>
         </div>
       </section>
+
+      <!-- Tab 5: Emergency QR Pass -->
+      <section id="senior-emergency" class="tab-content" aria-label="Emergency Pass" style="display: none;">
+        <div class="card-box" style="text-align: center;">
+          <h2 style="font-size: 17px; font-weight: 900; color: #B91C1C;">🚨 Zero-App Emergency Clinical Pass</h2>
+          <p style="font-size: 12px; color: #64748B; margin-bottom: 14px;">Paramedics and ER doctors scan this QR with any camera. No app required.</p>
+
+          <div style="display: inline-block; padding: 14px; background: white; border: 2px solid #CBD5E1; border-radius: 18px; margin-bottom: 12px;">
+            <div id="emergencyQrContainer"></div>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="font-size: 12px; font-weight: 700; color: #64748B;">ACTIVE ROLLING ACCESS PIN</div>
+            <div id="emergencyRollingPinText" style="font-size: 32px; font-weight: 900; letter-spacing: 4px; color: #1E293B;">------</div>
+            <div id="emergencyPinTimerText" style="font-size: 12px; color: #DC2626; font-weight: 700;">Rotates in 60s</div>
+          </div>
+
+          <!-- Consent Toggles -->
+          <div style="text-align: left; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 12px; margin-bottom: 14px;">
+            <h4 style="font-size: 13px; font-weight: 800; margin-bottom: 8px;">🔒 Senior Privacy & Consent Controls:</h4>
+            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span>Share Active Medications & Chemical Salts</span>
+              <input type="checkbox" id="consentShareMeds" checked>
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span>Share Chronic Conditions & Allergies</span>
+              <input type="checkbox" id="consentShareConditions" checked>
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; font-size: 13px;">
+              <span>Share Cardiologist & Hospital Contact</span>
+              <input type="checkbox" id="consentShareDoctor" checked>
+            </label>
+          </div>
+
+          <button class="btn-primary" onclick="downloadClinicalPdf()" style="width: 100%; padding: 12px; font-size: 14px; background: #1E3A8A;">
+            📄 Download Official Clinical Brief (PDF)
+          </button>
+        </div>
+      </section>
+
+      <!-- Senior Bottom Navigation (5 Tabs) -->
+      <nav id="seniorNav" class="tab-nav" aria-label="Senior Navigation">
+        <button class="tab-btn active" onclick="switchSeniorTab('today')">
+          <span style="font-size: 20px;">🏠</span>
+          <span>Today</span>
+        </button>
+        <button class="tab-btn" onclick="switchSeniorTab('medicines')">
+          <span style="font-size: 20px;">💊</span>
+          <span>Meds</span>
+        </button>
+        <button class="tab-btn" onclick="switchSeniorTab('history')">
+          <span style="font-size: 20px;">📊</span>
+          <span>Stats</span>
+        </button>
+        <button class="tab-btn" onclick="switchSeniorTab('profile')">
+          <span style="font-size: 20px;">👤</span>
+          <span>Profile</span>
+        </button>
+        <button class="tab-btn" onclick="switchSeniorTab('emergency')">
+          <span style="font-size: 20px;">🚨</span>
+          <span>QR Pass</span>
+        </button>
+      </nav>
 
     </div>
 
-    <!-- ==================== 2. CAREGIVER VIEW ONLY ==================== -->
+    <!-- ==================== 2. CAREGIVER COMMAND HUB ==================== -->
     <div id="caregiverSection" style="display: none;">
-
-      <!-- Tab 1: Caregiver Hub (Overview, Adherence, Appointments, Insights) -->
-      <section id="cg-hub" class="tab-content active" aria-label="Caregiver Hub">
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <div>
-              <h2 style="font-size: 20px; font-weight: 800;">Caregiver Command Hub</h2>
-              <p style="font-size: 13px; color: #64748B;" id="cgManagedSeniorText">Linked Senior: Ramesh Rao (9849012345)</p>
-            </div>
-            <span style="font-size: 26px;" aria-hidden="true">👨‍👩‍👧</span>
-          </div>
-
-          <!-- Weekly Adherence Grid -->
-          <h3 style="font-size: 15px; font-weight: 800; color: #1E293B; margin-bottom: 8px;">
-            📅 Past 7 Days Adherence Tracker
-          </h3>
-          <div class="weekly-grid">
-            <div class="day-pill good">Mon<br>✅</div>
-            <div class="day-pill good">Tue<br>✅</div>
-            <div class="day-pill good">Wed<br>✅</div>
-            <div class="day-pill good">Thu<br>✅</div>
-            <div class="day-pill good">Fri<br>✅</div>
-            <div class="day-pill good">Sat<br>✅</div>
-            <div class="day-pill today good">Sun<br>✅</div>
-          </div>
-          <div style="font-size: 13px; font-weight: 700; color: #10B981; margin-bottom: 14px;">
-            Weekly Adherence Rate: 92% • 0 Missed Critical Doses
-          </div>
-
-          <!-- Adherence Insights Card -->
-          <div id="adherenceInsightsBox" style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-            <h4 style="font-size: 14px; font-weight: 800; color: #0369A1; margin-bottom: 4px;">📊 AI Adherence & Pattern Insights</h4>
-            <div id="insightsContent" style="font-size: 13px; color: #0C4A6E; line-height: 1.5;">
-              7-Day Adherence: <strong>92%</strong> | 30-Day Adherence: <strong>89%</strong><br>
-              💡 <em>Consistent adherence across all daily meal anchors.</em>
-            </div>
-          </div>
-
-          <!-- Refill Runway Card -->
-          <div style="background: #FEF2F2; border-left: 5px solid #EF4444; padding: 12px; border-radius: 12px; margin-bottom: 16px;">
-            <div style="font-weight: 800; color: #991B1B; font-size: 14px;">⚠️ Refill Alert (Runway: 2 Days)</div>
-            <div style="font-size: 13px; color: #7F1D1D; margin-top: 2px;">
-              <strong>BP Tablet (Telmikem 40)</strong> only has 2 pills left. Please purchase from pharmacy.
-            </div>
-          </div>
-
-          <!-- Appointments Section -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <h4 style="font-size: 14px; font-weight: 800;">📅 Doctor Appointments</h4>
-              <button onclick="toggleAppointmentForm()" class="btn-pill" style="font-size: 11px;">+ New Appt</button>
-            </div>
-            
-            <div id="newApptForm" style="display: none; background: white; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px; margin-bottom: 10px;">
-              <label for="apptDocName" style="font-size: 11px; font-weight: 700; display: block;">Doctor Name:</label>
-              <input type="text" id="apptDocName" placeholder="e.g. Dr. K. S. Murthy" class="input-box" style="margin-bottom: 6px; font-size: 13px; padding: 8px;">
-              <label for="apptSpecialty" style="font-size: 11px; font-weight: 700; display: block;">Specialty & Hospital:</label>
-              <input type="text" id="apptSpecialty" placeholder="e.g. Cardiologist, Care Hospitals" class="input-box" style="margin-bottom: 6px; font-size: 13px; padding: 8px;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <div>
-                  <label for="apptDate" style="font-size: 11px; font-weight: 700; display: block;">Date:</label>
-                  <input type="date" id="apptDate" class="input-box" style="margin-bottom: 6px; font-size: 13px; padding: 8px;">
-                </div>
-                <div>
-                  <label for="apptTime" style="font-size: 11px; font-weight: 700; display: block;">Time:</label>
-                  <input type="time" id="apptTime" class="input-box" style="margin-bottom: 6px; font-size: 13px; padding: 8px;" value="10:00">
-                </div>
-              </div>
-              <button class="btn-primary" onclick="submitNewAppointment()" style="width: 100%; padding: 8px; font-size: 13px;">Save Appointment & Schedule Email</button>
-            </div>
-
-            <div id="appointmentsListFeed"></div>
-          </div>
-
-          <!-- Add Medicine to Senior (Consent-Aware) -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-            <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 4px;">➕ Add Medicine Proposal</h4>
-            <p style="font-size: 12px; color: #64748B; margin-bottom: 8px;">Proposed medicines require senior confirmation on their device.</p>
-            <label for="newMedNameInput" style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 2px;">Medicine Name:</label>
-            <input type="text" id="newMedNameInput" placeholder="e.g. Thyroid Tablet (Eltroxin 50)" class="input-box" style="margin-bottom: 8px; font-size: 14px;">
-            <label for="newMedAnchorInput" style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 2px;">Meal Timing Anchor:</label>
-            <select id="newMedAnchorInput" class="input-box" style="margin-bottom: 8px; font-size: 14px;">
-              <option value="breakfast">🌅 Breakfast (Morning)</option>
-              <option value="lunch">☀️ Lunch (Afternoon)</option>
-              <option value="dinner">🌙 Dinner (Night)</option>
-            </select>
-            <button class="btn-primary" onclick="submitNewMedication()" style="width: 100%; padding: 10px; font-size: 14px;">
-              Propose Medicine to Senior
-            </button>
-          </div>
-
-          <!-- Send Voice Reminder to Senior -->
-          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px; margin-bottom: 16px;">
-            <h4 style="font-size: 14px; font-weight: 800; margin-bottom: 4px;">🎙️ Send Personal Voice Note to Senior</h4>
-            <p style="font-size: 12px; color: #64748B; margin-bottom: 8px;">
-              This loving reminder plays on their phone when it's time for their dose.
-            </p>
-            <label for="caregiverVoiceMsgInput" style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 2px;">Message:</label>
-            <input type="text" id="caregiverVoiceMsgInput" placeholder="e.g. Dad, remember to take your afternoon tablet after lunch." class="input-box" style="margin-bottom: 8px; font-size: 14px;">
-            <button class="btn-primary" onclick="submitCaregiverVoiceNote()" style="width: 100%; padding: 10px; font-size: 14px;">
-              💌 Save Personal Voice Reminder
-            </button>
-          </div>
-
-          <h3 style="font-size: 15px; font-weight: 800; margin: 14px 0 8px;">Activity Audit Log</h3>
-          <div id="activityLogFeed"></div>
+      
+      <!-- Multi-Senior Switcher & Header -->
+      <div class="card-box" style="background: #1E293B; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h2 style="font-size: 16px; font-weight: 800; color: #93C5FD;">👨‍👩‍👧 Caregiver Command Hub</h2>
+          <button class="btn-pill" onclick="openAddSeniorModal()" style="font-size: 11px; padding: 4px 10px; background: #3B82F6; color: white; border: none;">+ Add Senior</button>
         </div>
-      </section>
+        <div style="font-size: 12px; color: #94A3B8; margin-bottom: 6px;">Managing Senior:</div>
+        <select id="cgSeniorSelect" onchange="onCgSelectedSeniorChanged()" class="input-box" style="background: #334155; color: white; border-color: #475569; margin-bottom: 4px;"></select>
+      </div>
 
-      <!-- Tab 2: Prescription vs Strip Audit (Camera + AI) -->
-      <section id="cg-audit" class="tab-content" aria-label="Prescription AI Audit">
-        <div class="card">
-          <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">🔍 Prescription vs Strip AI Audit</h2>
-          <p style="font-size: 13px; color: #64748B; margin-bottom: 14px;">
-            Click photos of doctor prescription and medicine strips. AI cross-checks chemical salts and flags missing items:
-          </p>
+      <!-- Quick Actions Grid -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+        <button class="card-box" onclick="openProposeMedModal()" style="text-align: center; border: 2px dashed #3B82F6; margin-bottom: 0; cursor: pointer;">
+          <span style="font-size: 24px;">➕</span>
+          <div style="font-weight: 800; font-size: 13px; color: #1E40AF; margin-top: 4px;">Propose Medicine</div>
+          <div style="font-size: 11px; color: #64748B;">Requires Senior Consent</div>
+        </button>
+        <button class="card-box" onclick="openVoiceNoteModal()" style="text-align: center; border: 2px dashed #10B981; margin-bottom: 0; cursor: pointer;">
+          <span style="font-size: 24px;">🎙️</span>
+          <div style="font-weight: 800; font-size: 13px; color: #065F46; margin-top: 4px;">Add Voice Note</div>
+          <div style="font-size: 11px; color: #64748B;">Auto-Anchored via AI</div>
+        </button>
+      </div>
 
-          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-            <button class="btn-primary" onclick="openLiveCamera('audit_rx')" style="flex: 1; padding: 10px; font-size: 13px;">
-              📷 Prescription Photo
-            </button>
-            <button class="btn-secondary" onclick="openLiveCamera('audit_strip')" style="flex: 1; padding: 10px; font-size: 13px;">
-              📷 Strips Photo
-            </button>
-          </div>
+      <!-- Caregiver Adherence & Safety Insights -->
+      <div class="card-box">
+        <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 8px;">📈 Live Adherence & Missed Dose Patterns</h3>
+        <div id="cgAdherenceSummary" style="font-size: 13px; color: #475569;">Loading clinical metrics...</div>
+      </div>
 
-          <div style="background: #F1F5F9; padding: 12px; border-radius: 12px; margin-bottom: 12px;">
-            <div id="rxPhotoPreviewBox" style="display: none; margin-bottom: 8px;">
-              <img id="auditRxPhotoImg" style="width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px;" alt="Captured doctor paper prescription photograph">
-            </div>
-            <label for="auditRxInput" style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 2px;">Prescription Details:</label>
-            <textarea id="auditRxInput" rows="2" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px; font-size: 13px; box-sizing: border-box;">Rx: Tab Telmikem 40 (BP) 1-0-0, Tab Glycomet 500 (Sugar) 1-0-1, Tab Ecosprin 75 0-1-0. Review in 30 days.</textarea>
-
-            <div id="stripPhotoPreviewBox" style="display: none; margin: 8px 0;">
-              <img id="auditStripPhotoImg" style="width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px;" alt="Captured chemist medicine blister strips photograph">
-            </div>
-            <label for="auditStripInput" style="font-size: 12px; font-weight: 700; color: #334155; margin-top: 6px; display: block; margin-bottom: 2px;">Chemist Strips Bought:</label>
-            <textarea id="auditStripInput" rows="2" style="width: 100%; border: 1px solid #CBD5E1; border-radius: 8px; padding: 8px; font-size: 13px; box-sizing: border-box;">Chemist Strips: Telmikem 40 (10 tabs), Glycomet 500 (10 tabs). (Ecosprin not given).</textarea>
-          </div>
-
-          <button class="btn-primary" onclick="runPrescriptionAudit()" id="btnRunAudit" style="width: 100%; padding: 12px; font-size: 15px;">
-            ⚡ Run Gemini AI Salt Reconciliation
-          </button>
-
-          <div id="auditResultsSection" style="margin-top: 14px; display: none;">
-            <div id="discrepancyBox" style="background: #FEF2F2; border-left: 5px solid #EF4444; padding: 12px; border-radius: 10px; margin-bottom: 12px;">
-              <h4 style="color: #991B1B; font-weight: 800;">⚠️ Discrepancy Detected!</h4>
-              <p id="discrepancyText" style="font-size: 13px; color: #7F1D1D; margin-top: 4px;"></p>
-            </div>
-            <h4 style="font-size: 15px; font-weight: 800; margin-bottom: 6px;">📦 Visual Refill Runway</h4>
-            <div id="refillRunwayList"></div>
-          </div>
+      <!-- Doctor Appointments Manager -->
+      <div class="card-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="font-size: 15px; font-weight: 800;">📅 Upcoming Doctor Appointments</h3>
+          <button class="btn-primary" onclick="openAppointmentModal()" style="padding: 5px 10px; font-size: 12px;">+ Add</button>
         </div>
-      </section>
+        <div id="cgAppointmentsList"></div>
+      </div>
 
+      <!-- Activity Audit Trail -->
+      <div class="card-box">
+        <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 8px;">🛡️ Immutable Security & Health Audit Trail</h3>
+        <div id="cgActivityLogsList"></div>
+      </div>
+
+      <!-- Unlink Senior Option -->
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="unlinkCurrentSenior()" class="btn-pill" style="color: #DC2626; border: 1px solid #FCA5A5; background: #FEF2F2; font-size: 12px; padding: 6px 12px;">
+          ✕ Unlink Current Senior from Account
+        </button>
+      </div>
     </div>
 
   </main>
-
-  <!-- ==================== ROLE-SPECIFIC BOTTOM NAVIGATION ==================== -->
-  <nav class="bottom-nav" id="seniorNav" role="navigation" aria-label="Senior Primary Navigation">
-    <button class="nav-item active" onclick="switchSeniorTab('home')" aria-label="Navigate to Home">
-      <span class="nav-icon" aria-hidden="true">🏠</span>
-      <span id="navHomeText">Home</span>
-    </button>
-    <button class="nav-item" onclick="switchSeniorTab('routine')" aria-label="Navigate to Daily Routine">
-      <span class="nav-icon" aria-hidden="true">🗓️</span>
-      <span id="navRoutineText">Routine</span>
-    </button>
-    <button class="nav-item" onclick="switchSeniorTab('emergency')" aria-label="Navigate to Emergency QR Code">
-      <span class="nav-icon" aria-hidden="true">🚨</span>
-      <span id="navEmergencyText">Emergency QR</span>
-    </button>
-  </nav>
-
-  <nav class="bottom-nav" id="caregiverNav" style="display: none;" role="navigation" aria-label="Caregiver Primary Navigation">
-    <button class="nav-item active" onclick="switchCaregiverTab('hub')" aria-label="Navigate to Caregiver Hub">
-      <span class="nav-icon" aria-hidden="true">📊</span>
-      <span>Caregiver Hub</span>
-    </button>
-    <button class="nav-item" onclick="switchCaregiverTab('audit')" aria-label="Navigate to AI Prescription Audit">
-      <span class="nav-icon" aria-hidden="true">🔍</span>
-      <span>AI Audit</span>
-    </button>
-    <button class="nav-item" onclick="openDoctorViewDirect()" aria-label="Open Patient Emergency Medical Brief">
-      <span class="nav-icon" aria-hidden="true">🚨</span>
-      <span>Patient QR</span>
-    </button>
-  </nav>
 
   <script src="/static/js/app.js"></script>
 </body>

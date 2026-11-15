@@ -49,10 +49,10 @@ app.include_router(alerts.router)
 app.include_router(caregiver.router)
 app.include_router(push.router)
 
-# Mount static and uploads directories
+# Secure Storage Directory
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
 os.makedirs(uploads_dir, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+# Public /uploads mount removed for security; files served via authenticated /api/audit/file/{filename} endpoint
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")

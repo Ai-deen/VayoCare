@@ -85,7 +85,7 @@ class StorageService:
         with open(local_path, "wb") as f:
             f.write(file_bytes)
 
-        file_url = f"{settings.PUBLIC_BASE_URL}/uploads/{unique_name}"
+        file_url = f"{settings.PUBLIC_BASE_URL}/api/audit/file/{unique_name}"
         return {
             "file_url": file_url,
             "file_name": unique_name,

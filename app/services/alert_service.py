@@ -8,10 +8,16 @@ logger = logging.getLogger(__name__)
 
 class AlertService:
     @staticmethod
+    def _get_valid_email(patient: Patient) -> str:
+        for cg in patient.caregivers:
+            if cg.email and "@" in cg.email and not cg.email.endswith("@example.com"):
+                return cg.email
+        return ""
+
+    @staticmethod
     def send_missed_dose_alert(patient: Patient, medication: Medication, reason: str = "") -> AlertNotification:
         """Sends immediate high-priority alert to caregivers when critical dose is missed."""
-        primary_caregiver = patient.caregivers[0] if patient.caregivers else None
-        recipient = primary_caregiver.email if primary_caregiver else "family@example.com"
+        recipient = AlertService._get_valid_email(patient)
         
         title = f"⚠️ Critical Alert: Missed Dose for {patient.name}"
         message = (
@@ -24,16 +30,19 @@ class AlertService:
             severity="critical",
             title=title,
             message=message,
-            recipient=recipient
+            recipient=recipient,
+            phone=patient.phone
         )
-        logger.warning(f"[EMAIL DISPATCHED TO {recipient}]: {title} - {message}")
+        if recipient:
+            logger.warning(f"[EMAIL DISPATCHED TO {recipient}]: {title} - {message}")
+        else:
+            logger.info(f"[IN-APP NOTIFICATION STORED FOR {patient.name}]: {title}")
         return alert
 
     @staticmethod
     def send_refill_alert(patient: Patient, medication: Medication) -> AlertNotification:
         """Sends low-stock refill alert when remaining pills <= 3."""
-        primary_caregiver = patient.caregivers[0] if patient.caregivers else None
-        recipient = primary_caregiver.email if primary_caregiver else "family@example.com"
+        recipient = AlertService._get_valid_email(patient)
 
         title = f"📦 Refill Runway Alert: {medication.brand_name} running low"
         message = (
@@ -46,29 +55,13 @@ class AlertService:
             severity="warning",
             title=title,
             message=message,
-            recipient=recipient
+            recipient=recipient,
+            phone=patient.phone
         )
-        logger.info(f"[EMAIL DISPATCHED TO {recipient}]: {title}")
-        return alert
-
-    @staticmethod
-    def send_doctor_appointment_reminder(patient: Patient, doctor_name: str, appointment_time: str) -> AlertNotification:
-        """Proactive reminder for doctor consultation."""
-        primary_caregiver = patient.caregivers[0] if patient.caregivers else None
-        recipient = primary_caregiver.email if primary_caregiver else "family@example.com"
-
-        title = f"🩺 Appointment Reminder: Consultation with {doctor_name}"
-        message = (
-            f"Upcoming appointment scheduled for {patient.name} with {doctor_name} at {appointment_time}. "
-            f"Ensure to carry the 1-Tap Doctor Emergency QR Pass."
-        )
-
-        alert = db.add_alert(
-            severity="info",
-            title=title,
-            message=message,
-            recipient=recipient
-        )
+        if recipient:
+            logger.warning(f"[EMAIL DISPATCHED TO {recipient}]: {title} - {message}")
+        else:
+            logger.info(f"[IN-APP NOTIFICATION STORED FOR {patient.name}]: {title}")
         return alert
 
 alert_service = AlertService()
