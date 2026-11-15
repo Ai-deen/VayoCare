@@ -1,10 +1,11 @@
-// VayoCare PWA Application Engine
+// VayoCare PWA Core Application Engine
 
 let currentLanguage = 'te';
-let currentUserRole = 'patient'; // 'patient' or 'caregiver'
+let currentUserRole = 'patient';
 let currentAnchor = 'breakfast';
 let isListening = false;
 let speechRecognition = null;
+let wizardRole = 'patient';
 
 // Complete Multilingual Dictionary (Zero Token Cost on Language Switch)
 const I18N = {
@@ -16,8 +17,6 @@ const I18N = {
     micHint: "నొక్కి మాట్లాడండి (Tap to Speak)",
     btnTaken: "హా, వేసుకున్నాను<br><small style='font-size:12px; font-weight:600;'>(Yes, Taken)</small>",
     btnLater: "తర్వాత వేసుకుంటా<br><small style='font-size:12px; font-weight:600;'>(Take Later)</small>",
-    chipOfftopic: "బయటికి వెళ్లాను (Shopping Chat)",
-    chipSymptom: "తలనొప్పిగా ఉంది (Unwell / Pain)",
     todayMedsHeading: "ఈరోజు మాత్రలు (Today's Doses)",
     routineTitle: "🗣️ మీ దినచర్య (Daily Routine)",
     routineDesc: "మీరు ఏ సమయంలో తింటారో చెబితే, AI దానికి తగినట్లుగా మాత్రల సమయాన్ని నిర్ణయిస్తుంది.",
@@ -52,8 +51,6 @@ const I18N = {
     micHint: "बोलने के लिए दबाएं (Tap to Speak)",
     btnTaken: "हाँ, ले ली है<br><small style='font-size:12px; font-weight:600;'>(Yes, Taken)</small>",
     btnLater: "बाद में लूंगा<br><small style='font-size:12px; font-weight:600;'>(Take Later)</small>",
-    chipOfftopic: "बाहर गया था (Shopping Chat)",
-    chipSymptom: "सिर दर्द / तबीयत खराब (Pain)",
     todayMedsHeading: "आज की दवाएं (Today's Doses)",
     routineTitle: "🗣️ आपकी दिनचर्या (Daily Routine)",
     routineDesc: "अपने भोजन का समय बताएं, AI दवाओं का समय अपने आप तय कर देगा।",
@@ -88,8 +85,6 @@ const I18N = {
     micHint: "Tap to Speak to Companion",
     btnTaken: "Yes, Taken<br><small style='font-size:12px; font-weight:600;'>(Confirmed)</small>",
     btnLater: "Take Later<br><small style='font-size:12px; font-weight:600;'>(Remind Soon)</small>",
-    chipOfftopic: "Went Shopping (Off-Topic)",
-    chipSymptom: "Have Headache / Pain",
     todayMedsHeading: "Today's Essential Medicines",
     routineTitle: "🗣️ Routine-Anchored Schedule",
     routineDesc: "Speak your daily meal schedule once, and doses anchor naturally around meals.",
@@ -122,6 +117,15 @@ const I18N = {
 document.addEventListener('DOMContentLoaded', () => {
   registerServiceWorker();
   initSpeechRecognition();
+
+  // If first time or not configured, show onboarding wizard
+  if (!localStorage.getItem('vayocare_onboarded')) {
+    openOnboardingWizard();
+  } else {
+    currentUserRole = localStorage.getItem('vayocare_user_role') || 'patient';
+    switchUserRole(currentUserRole);
+  }
+
   loadPatientData();
   loadMedications();
   loadRoutine();
@@ -136,7 +140,103 @@ function registerServiceWorker() {
   }
 }
 
-// 2. Language Switcher (Complete Instant UI Localization)
+// 2. Onboarding & Setup Wizard
+function openOnboardingWizard() {
+  document.getElementById('onboardingWizard').style.display = 'block';
+  goToWizardStep(1);
+}
+
+function selectWizardRole(role) {
+  wizardRole = role;
+  document.getElementById('roleCardPatient').classList.toggle('selected', role === 'patient');
+  document.getElementById('roleCardCaregiver').classList.toggle('selected', role === 'caregiver');
+  document.getElementById('caregiverLinkingFields').style.display = (role === 'caregiver') ? 'block' : 'none';
+}
+
+function goToWizardStep(stepNum) {
+  document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+
+  const stepEl = document.getElementById(`wizardStep${stepNum}`);
+  if (stepEl) stepEl.classList.add('active');
+
+  for (let i = 1; i <= stepNum; i++) {
+    const dot = document.getElementById(`dotStep${i}`);
+    if (dot) dot.classList.add('active');
+  }
+}
+
+function previewUploadedPrescription(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = document.getElementById('cameraPreviewThumb');
+      img.src = e.target.result;
+      img.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function loadDemoProfileAndSkip() {
+  localStorage.setItem('vayocare_onboarded', 'true');
+  localStorage.setItem('vayocare_user_role', 'patient');
+  document.getElementById('onboardingWizard').style.display = 'none';
+  switchUserRole('patient');
+  loadPatientData();
+  loadMedications();
+}
+
+async function finishWizardAndOpenDashboard() {
+  const name = document.getElementById('setupUserName').value.trim() || "Ramesh Rao";
+  const phone = document.getElementById('setupUserPhone').value.trim() || "9849012345";
+  const bf = document.getElementById('setupBreakfastTime').value || "09:00";
+  const lunch = document.getElementById('setupLunchTime').value || "13:30";
+  const dinner = document.getElementById('setupDinnerTime').value || "20:30";
+
+  try {
+    // 1. Post phone auth
+    await fetch('/api/auth/phone-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        role: wizardRole,
+        name: name,
+        phone: phone,
+        patient_phone: wizardRole === 'caregiver' ? (document.getElementById('setupPatientPhone').value || "9849012345") : phone,
+        language: currentLanguage
+      })
+    });
+
+    // 2. Post routine schedule
+    await fetch('/api/routine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        wake_up: "07:30",
+        breakfast: bf,
+        lunch: lunch,
+        dinner: dinner,
+        bedtime: "22:00",
+        notes: "Configured via VayoCare onboarding wizard"
+      })
+    });
+
+    localStorage.setItem('vayocare_onboarded', 'true');
+    localStorage.setItem('vayocare_user_role', wizardRole);
+    document.getElementById('onboardingWizard').style.display = 'none';
+
+    switchUserRole(wizardRole);
+    loadPatientData();
+    loadMedications();
+    loadRoutine();
+  } catch (err) {
+    console.error('Error completing wizard:', err);
+    loadDemoProfileAndSkip();
+  }
+}
+
+// 3. Language Switcher (Complete Instant UI Localization)
 function setAppLanguage(lang) {
   currentLanguage = lang;
   document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -155,9 +255,10 @@ function applyLanguage(lang) {
   }
 }
 
-// 3. Role Switcher (Senior Mode vs Caregiver Hub)
+// 4. Role Switcher
 function switchUserRole(role) {
   currentUserRole = role;
+  localStorage.setItem('vayocare_user_role', role);
   document.getElementById('btnRolePatient').classList.toggle('active', role === 'patient');
   document.getElementById('btnRoleCaregiver').classList.toggle('active', role === 'caregiver');
 
@@ -172,9 +273,8 @@ function switchUserRole(role) {
   }
 }
 
-// 4. Navigation
+// 5. Navigation
 function switchNavTab(tabId) {
-  // If in caregiver mode and clicks routine/emergency, switch to patient view or handle
   if (tabId === 'caretaker' || tabId === 'audit') {
     if (currentUserRole !== 'caregiver') switchUserRole('caregiver');
   } else {
@@ -197,7 +297,7 @@ function switchNavTab(tabId) {
   }
 }
 
-// 5. Patient Profile & Greeting
+// 6. Patient Profile & Greeting
 async function loadPatientData() {
   try {
     const res = await fetch('/api/auth/profile');
@@ -220,7 +320,7 @@ async function fetchGreeting() {
   }
 }
 
-// 6. Speech Recognition & Voice Interaction
+// 7. Voice Interaction
 function initSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) return;
@@ -250,7 +350,7 @@ function initSpeechRecognition() {
 
 function toggleVoiceInput() {
   if (!speechRecognition) {
-    alert('Voice input is ready via quick response chips or mobile browsers.');
+    alert('Voice speech recognition is active on supported mobile browsers.');
     return;
   }
   if (isListening) {
@@ -271,7 +371,6 @@ function speakText(text, lang) {
   window.speechSynthesis.speak(utt);
 }
 
-// 7. Companion Message Processing (Gemini AI with Fallback)
 async function sendCompanionMessage(text) {
   const pill = document.getElementById('voiceStatusPill');
   pill.textContent = 'VayoCare AI analyzing...';
@@ -307,7 +406,7 @@ function submitQuickVoice(text) {
   sendCompanionMessage(text);
 }
 
-// 8. Medications Display (Senior-Friendly Names)
+// 8. Medications Display
 async function loadMedications() {
   try {
     const res = await fetch('/api/medications');
@@ -316,7 +415,6 @@ async function loadMedications() {
     if (!container) return;
 
     container.innerHTML = meds.map(m => {
-      // Pick senior friendly label based on language
       const friendlyName = currentLanguage === 'te' ? m.senior_label_te : (currentLanguage === 'hi' ? m.senior_label_hi : m.senior_label);
       const isUrgent = m.remaining_pills <= 3;
 
@@ -418,7 +516,7 @@ async function parseVoiceRoutine() {
   }
 }
 
-// 10. Caregiver Loving Voice Note
+// 10. Caregiver Note
 async function submitCaregiverVoiceNote() {
   const input = document.getElementById('caregiverVoiceMsgInput');
   const msg = input.value.trim();
@@ -437,7 +535,6 @@ async function submitCaregiverVoiceNote() {
         assigned_anchor: 'breakfast'
       })
     });
-    const data = await res.json();
     alert('మీ సందేశం విజయవంతంగా సేవ్ అయ్యింది! రోగి యాప్‌లో ఇది వినిపిస్తుంది.');
     input.value = '';
     fetchGreeting();
@@ -446,7 +543,7 @@ async function submitCaregiverVoiceNote() {
   }
 }
 
-// 11. Prescription vs Strip AI Audit (USP 2)
+// 11. Prescription vs Strip AI Audit
 async function runPrescriptionAudit() {
   const btn = document.getElementById('i18n-btnRunAudit');
   btn.textContent = '⚡ Gemini 3.5 AI అనాలసిస్ జరుగుతోంది...';
@@ -505,14 +602,16 @@ async function runPrescriptionAudit() {
   }
 }
 
-// 12. Emergency QR Pass (Absolute URL)
+// 12. Emergency QR Pass
 async function fetchEmergencyQr() {
   try {
     const res = await fetch('/api/emergency/current-pin');
     const data = await res.json();
     document.getElementById('emergencyQrImg').src = data.qr_code_data;
     document.getElementById('rollingPinText').textContent = data.rolling_pin;
-    document.getElementById('doctorDirectLink').href = data.emergency_url;
+    // Direct robust link that never redirects to #
+    const docLink = document.getElementById('doctorDirectLink');
+    docLink.href = data.emergency_url;
   } catch (err) {
     console.error(err);
   }

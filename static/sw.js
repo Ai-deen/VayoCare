@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arogyamitra-v1';
+const CACHE_NAME = 'vayocare-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -8,13 +8,6 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
-        console.warn('Caching partial assets on install', err);
-      });
-    })
-  );
   self.skipWaiting();
 });
 
@@ -34,23 +27,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first, falling back to cache
+  // Network first
   if (event.request.method === 'GET') {
     event.respondWith(
       fetch(event.request)
-        .then((response) => {
-          // If valid response, clone and update cache
-          if (response && response.status === 200 && response.type === 'basic') {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
+        .catch(() => caches.match(event.request))
     );
   }
 });
