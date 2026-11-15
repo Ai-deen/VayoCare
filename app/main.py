@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers import (
-    auth, routine, companion, medications, audit, emergency, alerts, appointments
+    auth, routine, companion, medications, audit, emergency, alerts, appointments, caregiver, push
 )
 from app.services.email_service import email_engine
 
@@ -46,8 +46,13 @@ app.include_router(appointments.router)
 app.include_router(audit.router)
 app.include_router(emergency.router)
 app.include_router(alerts.router)
+app.include_router(caregiver.router)
+app.include_router(push.router)
 
-# Mount static directory
+# Mount static and uploads directories
+uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")

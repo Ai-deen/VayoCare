@@ -13,9 +13,9 @@ class GeminiService:
         self.primary_model = settings.GEMINI_MODEL
         self.candidate_models: List[str] = [
             self.primary_model,
-            "gemini-3.5-flash",
-            "gemini-3.8-flash",
-            "gemini-3.1-flash-lite"
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash"
         ]
         if self.api_key:
             try:
@@ -47,6 +47,28 @@ class GeminiService:
                     return json.loads(response.text)
             except Exception as e:
                 logger.warning(f"Model {model_name} invocation failed ({e}), trying next candidate...")
+
+        return None
+
+    def generate_multimodal_json(self, contents: List[Any], system_instruction: str) -> Optional[Dict[str, Any]]:
+        """Invokes Gemini multimodal model with image parts (Part.from_bytes) and text."""
+        if not self.is_available():
+            return None
+
+        for model_name in self.candidate_models:
+            try:
+                response = self.client.models.generate_content(
+                    model=model_name,
+                    contents=contents,
+                    config={
+                        "system_instruction": system_instruction,
+                        "response_mime_type": "application/json"
+                    }
+                )
+                if response and response.text:
+                    return json.loads(response.text)
+            except Exception as e:
+                logger.warning(f"Multimodal model {model_name} invocation failed ({e}), trying next candidate...")
 
         return None
 

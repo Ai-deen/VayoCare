@@ -9,7 +9,8 @@ class AuditService:
     @staticmethod
     def audit_prescription_and_strips(
         prescription_text: str,
-        strip_text: str
+        strip_text: str,
+        patient_phone: Optional[str] = None
     ) -> PrescriptionAuditResponse:
         """
         Reconciles Doctor's Prescription with actual Chemist strips purchased.
@@ -44,7 +45,7 @@ class AuditService:
         discrepancies: List[AuditDiscrepancy] = []
         matched: List[Dict[str, Any]] = []
 
-        meds = db.get_medications()
+        meds = db.get_medications(patient_phone)
         rx_lower = prescription_text.lower()
         strip_lower = strip_text.lower()
 

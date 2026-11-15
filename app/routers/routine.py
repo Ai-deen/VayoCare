@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from typing import Optional
+from fastapi import APIRouter, Query
 from app.models import RoutineSchedule, RoutineVoiceParseRequest
 from app.database import db
 from app.services.routine_service import routine_service
@@ -6,21 +7,24 @@ from app.services.routine_service import routine_service
 router = APIRouter(prefix="/api/routine", tags=["Routine-Anchored Schedule"])
 
 @router.get("", response_model=RoutineSchedule)
-def get_routine():
-    return db.get_patient().routine
+def get_routine(phone: Optional[str] = Query(None)):
+    clean = db._normalize_phone(phone) if phone else None
+    return db.get_patient(clean).routine
 
 @router.post("", response_model=RoutineSchedule)
-def update_routine(schedule: RoutineSchedule):
-    return db.update_routine(schedule)
+def update_routine(schedule: RoutineSchedule, phone: Optional[str] = Query(None)):
+    clean = db._normalize_phone(phone) if phone else None
+    return db.update_routine(schedule, phone=clean)
 
 @router.post("/parse-voice", response_model=RoutineSchedule)
 def parse_voice_routine(req: RoutineVoiceParseRequest):
     new_schedule = routine_service.parse_voice_routine(req.voice_transcript, req.language)
-    return db.update_routine(new_schedule)
+    return db.update_routine(new_schedule, phone=req.patient_id)
 
 @router.get("/current-anchor")
-def get_current_anchor():
-    patient = db.get_patient()
+def get_current_anchor(phone: Optional[str] = Query(None)):
+    clean = db._normalize_phone(phone) if phone else None
+    patient = db.get_patient(clean)
     slot = routine_service.get_current_anchor_slot(patient.routine)
     return {
         "current_anchor": slot,

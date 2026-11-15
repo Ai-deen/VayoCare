@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
@@ -41,7 +42,7 @@ def trigger_alert(req: TriggerAlertRequest):
     )
 
     # Proactively dispatch via EmailEngine with deduplication
-    idem_key = f"alert_trigger_{patient.phone}_{req.title}_{int(datetime.now().timestamp() // 60)}" if "datetime" in globals() else f"alert_{patient.phone}_{req.title}"
+    idem_key = f"alert_trigger_{patient.phone}_{req.title}_{int(datetime.now().timestamp() // 60)}"
     body_html = f"""
     <h3>VayoCare Health Alert</h3>
     <p><strong>Patient:</strong> {patient.name} ({patient.phone})</p>
